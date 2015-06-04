@@ -126,10 +126,10 @@ function visualizeData(dataTree) {
 		.attr("dy", ".3em")
 		.text(function (d) {
 			var winRate = 100 * d.win / d.total;
-			return d.name + ' ' +  winRate.toFixed(2) + '%';
+			return championName[d.name] + ' ' +  winRate.toFixed(2) + '%';
 		});
 }
 console.time("test");  // log start timestamp
-//loadChampionInfo();
-loadSummonerData();
+loadChampionInfo();
+loadData();
 console.timeEnd("test");
