@@ -1,6 +1,6 @@
 // to query the seed data
-var URL_START = "https://s3-us-west-1.amazonaws.com/riot-api/seed_data"
-var QUERY = "matches1.json"
+var URL_START = "https://s3-us-west-1.amazonaws.com/riot-api/seed_data";
+var QUERY = "matches1.json";
 
 // diameter for the entire svg
 var diameter = 900;
@@ -21,30 +21,36 @@ var svg = d3.select("body").append("svg")
 
 var championName = [];
 
+// loads data from games.json file to calculate winrate against specific champions
+// 100% Malphite means you win 100% of the time against Malphite
 function loadSummonerData() {
 	var dataset = [];
 
-	d3.json("matches2.json", function(error, json) {
+	// change from hardcoding later
+	d3.json("wingsofdeathxgames.json", function(error, json) {
 		// array of all the objects for match data
-		matches = json.matches;
-		for (var i = 0; i < matches.length; i++) {
-			//console.log(matches[i].participants);
-			var participants = matches[i].participantIdentities;
-			for (var j = 0; j < participants.length; j++) {
-				var summoner = participants[j].player.summonerName;
-				console.log(summoner);
-				if (summoner in dataset) {
-					dataset[summoner].value++;
-
-				} else {
-					dataset[summoner] = { name : summoner, value : 1, win : 0, total : 0};
+		for (var i = 0; i < json.length; i++) {
+			var team = json[i].teamId;
+			var players = json[i].fellowPlayers;
+			var win = json[i].stats.win;
+			for (var j = 0; j < players.length; j++) {
+				if (players[j].teamId != team) {
+					var champion = players[j].championId;
+					if (champion in dataset) {
+						dataset[champion].value++;
+					} else {
+						dataset[champion] = {name : champion, value : 1, win : 0, total : 0};
+					} 
+					if (win) {
+						dataset[champion].win++;
+					}
+					dataset[champion].total++;
+					}
 				}
-				//if (matches[i].participants[j].stats.winner) {
 				//	dataset[summoner].win++;
 				//}
 				//dataset[summoner].total++;
 			}
-		}
 		dataset = dataset.filter(function (d) {
 			return d != undefined;
 		})
@@ -131,5 +137,5 @@ function visualizeData(dataTree) {
 }
 console.time("test");  // log start timestamp
 loadChampionInfo();
-loadData();
+loadSummonerData();
 console.timeEnd("test");
