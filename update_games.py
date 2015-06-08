@@ -3,6 +3,7 @@ import key
 import sys
 
 API_key = key.getAPIkey();
+registered_users = {'boxbox': 245353, 'laughinggorz': 21823701, 'wingsofdeathx': 19660288}
 games = []
 #returns the array of matches for a given summoner in JSON format
 def load_database(summoner_name):
@@ -11,9 +12,9 @@ def load_database(summoner_name):
 	#print matches
 
 #gets a new array of matches from the Riot API and appends any new ones to the current array
-def update_summoner_matches():
+def update_recent_games(summoner_id):
 	changes_made = False
-	r = requests.get("https://na.api.pvp.net/api/lol/na/v1.3/game/by-summoner/" + str(summonerId) + "/recent?api_key=" + API_key)
+	r = requests.get("https://na.api.pvp.net/api/lol/na/v1.3/game/by-summoner/" + str(summoner_id) + "/recent?api_key=" + API_key)
 	new_games = r.json()['games']
 
 	# goes through each game and only appends new ranked games
@@ -26,15 +27,15 @@ def update_summoner_matches():
 	return changes_made
 
 #writes the new updated array to file	
-def write(summoner_name):
+def write_games(summoner_name):
 	with open(summoner_name + 'games.json', 'w') as fp:
    		json.dump(games, fp)
 
-summonerName = sys.argv[1]
-summonerId = sys.argv[2]
-
-games = load_database(summonerName)
-if update_summoner_matches():
-	write(summonerName)
-else:
-	print "no changes"
+# iterate through the list of summoner name and id pairs
+for summoner_name, summoner_id in registered_users.items():
+	games = load_database(summoner_name)
+	print summoner_name + ": "
+	if update_recent_games(summoner_id):
+		write_games(summoner_name)
+	else:
+		print "no changes"

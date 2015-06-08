@@ -21,18 +21,22 @@ var svg = d3.select("body").append("svg")
 
 var championName = [];
 
+// TO USE: booleans that each match must go through
+var filters = [];
+
 // loads data from games.json file to calculate winrate against specific champions
 // 100% Malphite means you win 100% of the time against Malphite
 function loadSummonerData() {
 	var dataset = [];
 
 	// change from hardcoding later
-	d3.json("wingsofdeathxgames.json", function(error, json) {
+	d3.json("wingsofdeathxgames.json", function(error, matches) {
 		// array of all the objects for match data
-		for (var i = 0; i < json.length; i++) {
-			var team = json[i].teamId;
-			var players = json[i].fellowPlayers;
-			var win = json[i].stats.win;
+		for (var i = 0; i < matches.length; i++) {
+			// INSERT BOOLEAN TO SKIP CERTAIN MATCHES THAT CAN BE ADJUSTED FOR ITEM, CHAMPION, MATCH LENGTH, ETC
+			var team = matches[i].teamId;
+			var players = matches[i].fellowPlayers;
+			var win = matches[i].stats.win;
 			for (var j = 0; j < players.length; j++) {
 				if (players[j].teamId != team) {
 					var champion = players[j].championId;
@@ -90,7 +94,7 @@ function loadData() {
 	});
 }
 
-function loadChampionInfo() {
+function loadChampionNames() {
 	d3.json("champion.json", function(error, json) {
 
 		for (var champion in json.data) {
@@ -135,7 +139,47 @@ function visualizeData(dataTree) {
 			return championName[d.name] + ' ' +  winRate.toFixed(2) + '%';
 		});
 }
+
+// test to see if filtering by smite works
+function loadSummonerDataSmite() {
+	var dataset = [];
+
+	// change from hardcoding later
+	d3.json("wingsofdeathxgames.json", function(error, matches) {
+		// array of all the objects for match data
+		for (var i = 0; i < matches.length; i++) {
+			if (matches[i].spell1 != 11) continue;
+			console.log(championName[matches[i].championId]);
+			var team = matches[i].teamId;
+			var players = matches[i].fellowPlayers;
+			var win = matches[i].stats.win;
+			for (var j = 0; j < players.length; j++) {
+				if (players[j].teamId != team) {
+					var champion = players[j].championId;
+					if (champion in dataset) {
+						dataset[champion].value++;
+					} else {
+						dataset[champion] = {name : champion, value : 1, win : 0, total : 0};
+					} 
+					if (win) {
+						dataset[champion].win++;
+					}
+					dataset[champion].total++;
+					}
+				}
+				//	dataset[summoner].win++;
+				//}
+				//dataset[summoner].total++;
+			}
+		dataset = dataset.filter(function (d) {
+			return d != undefined;
+		})
+
+		visualizeData({"children" : dataset});
+	});
+}
+
 console.time("test");  // log start timestamp
-loadChampionInfo();
+loadChampionNames();
 loadSummonerData();
 console.timeEnd("test");
