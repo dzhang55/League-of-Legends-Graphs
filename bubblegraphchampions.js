@@ -30,16 +30,22 @@ function loadSummonerData() {
 	var dataset = [];
 
 	// change from hardcoding later
-	d3.json("wingsofdeathxgames.json", function(error, matches) {
+	d3.json("dizzyyy.json", function(error, matches) {
 		// array of all the objects for match data
 		for (var i = 0; i < matches.length; i++) {
+			
 			// INSERT BOOLEAN TO SKIP CERTAIN MATCHES THAT CAN BE ADJUSTED FOR ITEM, CHAMPION, MATCH LENGTH, ETC
-			var team = matches[i].teamId;
-			var players = matches[i].fellowPlayers;
-			var win = matches[i].stats.win;
-			for (var j = 0; j < players.length; j++) {
-				if (players[j].teamId != team) {
-					var champion = players[j].championId;
+			var team = matches[i].player.teamId;
+
+			// fellowPlayers if using games.json, participants if using .json
+			var participants = matches[i].participants;
+			var win = matches[i].player.stats.winner;
+			for (var j = 0; j < participants.length; j++) {
+				if (participants[j].teamId != team) {
+					var champion = participants[j].championId;
+					if (champion == 92) {
+						console.log(matches[i].matchId);
+					}
 					if (champion in dataset) {
 						dataset[champion].value++;
 					} else {

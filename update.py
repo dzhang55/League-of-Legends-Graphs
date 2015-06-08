@@ -5,7 +5,7 @@ import time
 
 API_key = key.getAPIkey()
 #registered_users = {'boxbox': 245353, 'laughinggorz': 21823701, 'wingsofdeathx': 19660288, 'nightblue3': 25850956}
-registered_users = {'laughinggorz': 21823701}
+registered_users = {'dizzyyy': 23109706}
 #returns the array of matches for a given summoner in JSON format
 # if no file exists, create a json file with an empty array for matches
 def load_database(summoner_name): 
@@ -31,12 +31,19 @@ def load_match_history(summoner_id):
 
 		new_matches = r.json()['matches']
 
+		time.sleep(1)
+
 		for match in new_matches:
 			if not match in matches:
-				matches.append(get_other_participants(match['matchId']))
+				player = match['participants'][0]
+				match_details = get_other_participants(player['championId'], match['matchId'])
+				match_details['player'] = player
+				matches.append(match_details)
 				time.sleep(1)
 				#changes_made = True
 				print "match added"
+			else:
+				print "match already exists"
 
 		# break if no more matches remaining
 		if len(new_matches) != 15:
@@ -46,20 +53,25 @@ def load_match_history(summoner_id):
 	#return changes_made
 
 def match_history_query(summoner_id, index):
-	print "https://na.api.pvp.net/api/lol/na/v2.2/matchhistory/" + str(summoner_id) + "?&beginIndex=" + str(index) + "&api_key=" + API_key
 	return "https://na.api.pvp.net/api/lol/na/v2.2/matchhistory/" + str(summoner_id) + "?&beginIndex=" + str(index) + "&api_key=" + API_key
 
 #gets all the other participants from a match
 #can be used to initialize a users data, before using cron to simply update by most recent games
-def get_other_participants(match_id):
+def get_other_participants(champion_id, match_id):
 	try:
 		r = requests.get("https://na.api.pvp.net/api/lol/na/v2.2/match/" + str(match_id) +  "?api_key=" + API_key)
-		matches = r.json()
-		if 'status' in matches:
-			print matches['status']['message']
-		else : 
-			print "match details added"
-		return r.json()
+		match = r.json()
+		if 'status' in match:
+			print match['status']['message']
+		#else : 
+			#print "match details added"
+
+		# remove the player from the participants	
+		for participant in match['participants']:
+			if champion_id == participant['championId']:
+				match['participants'].remove(participant)
+				#print "removed owner"
+		return match
 	except requests.exceptions.HTTPError as e:
 		print e.message
 		time.sleep(2)
