@@ -16,12 +16,14 @@ def load_database(summoner_name):
 		return json.load(f)
 	#print matches
 
+
+
 #gets a new array of matches without other participants from the Riot API and appends any new ones to the current array
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(summoner_id):
 	index = 0
-	while True: 
-	#changes_made = False
+	done_loading = False
+	while not done_loading: 
 		try:
 			r = requests.get(match_history_query(summoner_id, index))
 		except requests.exceptions.HTTPError as e:
@@ -30,37 +32,37 @@ def load_match_history(summoner_id):
 			r = requests.get(match_history_query(summoner_id, index))
 
 		new_matches = r.json()['matches']
-
 		time.sleep(1)
 
-		for match in new_matches:
-			if not match in matches:
+		done_loading = add_current_matches(new_matches)
+		index += 15
+
+def add_current_matches(new_matches):
+	for match in reversed(new_matches):
+			#print match['matchId']
+			# check if matches is empty or if this match is already in matches
+			if not matches or match['matchId'] != matches[0]['matchId']:
 				player = match['participants'][0]
 				match_details = get_other_participants(player['championId'], match['matchId'])
 				match_details['player'] = player
 				matches.append(match_details)
-				time.sleep(1)
-				#changes_made = True
 				print "match added"
+				time.sleep(1)
 			else:
 				print "match already exists"
-
-		# break if no more matches remaining
-		if len(new_matches) != 15:
-			break
-		index += 15
-
-	#return changes_made
+				return True
+	if len(new_matches) != 15:
+		return True
 
 def match_history_query(summoner_id, index):
 	return "https://na.api.pvp.net/api/lol/na/v2.2/matchhistory/" + str(summoner_id) + "?&beginIndex=" + str(index) + "&api_key=" + API_key
 
 #gets all the other participants from a match
-#can be used to initialize a users data, before using cron to simply update by most recent games
 def get_other_participants(champion_id, match_id):
 	try:
 		r = requests.get("https://na.api.pvp.net/api/lol/na/v2.2/match/" + str(match_id) +  "?api_key=" + API_key)
 		match = r.json()
+
 		if 'status' in match:
 			print match['status']['message']
 		#else : 
@@ -70,6 +72,7 @@ def get_other_participants(champion_id, match_id):
 		for participant in match['participants']:
 			if champion_id == participant['championId']:
 				match['participants'].remove(participant)
+				break
 				#print "removed owner"
 		return match
 	except requests.exceptions.HTTPError as e:
@@ -86,7 +89,8 @@ def write(summoner_name):
 # iterate through the list of summoner name and id pairs
 for summoner_name, summoner_id in registered_users.items():
 	matches = load_database(summoner_name)
+	for match in matches:
+		print match['matchId']
 	print summoner_name + ": "
 	load_match_history(summoner_id)
 	write(summoner_name)
-	#print "no changes"
