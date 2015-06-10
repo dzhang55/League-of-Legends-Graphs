@@ -23,6 +23,7 @@ var championNames = [];
 var registeredUsers = [];
 var dataset = [];
 var summoner = "";
+var currChampionId = 0;
 
 // TO USE: booleans that each match must go through
 var filters = [];
@@ -35,11 +36,21 @@ function onlyRiven() {
 }
 
 // adds a filter function based on specific champion
-function filterByChampion(championName) {
-	filters.push(function (match){
-		championId = championNames.indexOf(championName);
+// function filterByChampion(championName) {
+// 	filters.push(function (match){
+// 		championId = championNames.indexOf(championName);
+// 		return match.player.championId == championId;
+// 	})
+// }
+
+// true if in this match, the player plays the selected champion or if no champion is selected
+function filterByChampion(match, championId) {
+	if (championId == 0) {
+		return true;
+	} else {
 		return match.player.championId == championId;
-	})
+	}
+
 }
 
 function filterByDate() {
@@ -60,6 +71,7 @@ function validMatch(match) {
 // loads data from games.json file to calculate winrate against specific champions
 // 100% Malphite means you win 100% of the time against Malphite
 function loadSummonerData(json) {
+	dataset = [];
 
 	// change from hardcoding later
 	//d3.json("../json/dizzyyy30games.json", function(error, matches) {
@@ -74,8 +86,12 @@ function loadSummonerData(json) {
 			var win = matches[i].player.stats.winner;
 
 			//SKIP CERTAIN MATCHES THAT CAN BE ADJUSTED FOR ITEM, CHAMPION, MATCH LENGTH, ETC
-			if (!validMatch(matches[i])) {
-				console.log("filtered out match");
+			// if (!validMatch(matches[i])) {
+			// 	console.log("filtered out match");
+			// 	continue;
+			// }
+
+			if (!filterByChampion(matches[i], currChampionId)) {
 				continue;
 			}
 
@@ -104,8 +120,18 @@ function loadSummonerData(json) {
 
 		console.log(sumDataset(dataset));
 
+		if (dataset.length == 0) {
+			noData();
+			return;
+		}
+
 		visualizeData({"children" : dataset});
 	});
+}
+
+// add some error that there is no data?
+function noData() {
+	svg.selectAll(".node").remove();
 }
 
 // no longer using this function
@@ -141,13 +167,28 @@ function loadData() {
 }
 
 // constructs an array of champion names with indices corresponding to champion ids
+// loads asynchonously because dropdown menu is dependent on it
 function loadChampionNames() {
-	d3.json("../json/champion.json", function(error, champions) {
-
-		for (var champion in champions.data) {
+	$.ajax({
+		url: "../json/champion.json",
+		async: false,
+		dataType: 'json',
+		success: function (champions) {
+			var menu = document.getElementById("dropdownlist");
+			console.log("Champion names loaded");
+			for (var champion in champions.data) {
 		//	console.log(json.data[champion].key);
 		//	console.log(champion);
-			championNames[parseInt(champions.data[champion].key)] = champion;
+				championNames[parseInt(champions.data[champion].key)] = champion;
+				var node = document.createElement("li");
+				var link = document.createElement("a");
+				link.setAttribute("role", "menuitem");
+				link.setAttribute("tabindex", "-1");
+				link.href = "#";
+				link.innerHTML = champion;
+				node.appendChild(link);
+				menu.appendChild(node);
+			}
 		}
 	});
 }
@@ -260,9 +301,7 @@ function loadRegisteredUsers() {
 
 console.time("test");  // log start timestamp
 loadChampionNames();
-//registeredUsers = loadRegisteredUsers();
-//onlyRiven();
-//loadSummonerData();
+
 
 // on submission of search, load the graph for a given user
 $("#summoner").submit(function() {
@@ -276,14 +315,21 @@ $("#summoner").submit(function() {
 });
 
 // on click of a menu item, filter the matches by champion and reload graph
-$('a[role="menuitem"]').on('click', function() {
+$("#dropdownlist a").on("click", function() {
 	var championName = $(this).html();
 	console.log(championName);
-	filterByChampion(championName);
+	//filterByChampion(championName);
+	if (championName == "All Champions") {
+		currChampionId = 0;
+	} else {
+		currChampionId = championNames.indexOf(championName);
+	}
+	console.log(currChampionId);
 	loadUser(summoner)
 
 	return true;
 });
+console.log("a function loaded");
 
 //$('.dropdown-toggle').dropdown()
 
@@ -296,5 +342,8 @@ $('a[role="menuitem"]').on('click', function() {
 // 	 console.log($('#date').input);
 // 	//datepicker.datepicker('setValue', value)
 // 	});
+//registeredUsers = loadRegisteredUsers();
+//onlyRiven();
+//loadSummonerData();
 
 console.timeEnd("test");
