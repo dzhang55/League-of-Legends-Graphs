@@ -169,27 +169,23 @@ function loadData() {
 // constructs an array of champion names with indices corresponding to champion ids
 // loads asynchonously because dropdown menu is dependent on it
 function loadChampionNames() {
-	$.ajax({
-		url: "../json/champion.json",
-		async: false,
-		dataType: 'json',
-		success: function (champions) {
-			var menu = document.getElementById("dropdownlist");
-			console.log("Champion names loaded");
-			for (var champion in champions.data) {
-		//	console.log(json.data[champion].key);
-		//	console.log(champion);
-				championNames[parseInt(champions.data[champion].key)] = champion;
-				var node = document.createElement("li");
-				var link = document.createElement("a");
-				link.setAttribute("role", "menuitem");
-				link.setAttribute("tabindex", "-1");
-				link.href = "#";
-				link.innerHTML = champion;
-				node.appendChild(link);
-				menu.appendChild(node);
-			}
-		}
+	d3.json("../json/champion.json", function(error, champions) {
+
+		var menu = document.getElementById("dropdownlist");
+ 		for (var champion in champions.data) {
+ 		//	console.log(json.data[champion].key);
+ 		//	console.log(champion);
+			championNames[parseInt(champions.data[champion].key)] = champion;
+			championNames[parseInt(champions.data[champion].key)] = champion;
+			var node = document.createElement("li");
+			var link = document.createElement("a");
+			link.setAttribute("role", "menuitem");
+			link.setAttribute("tabindex", "-1");
+			link.href = "#";
+			link.innerHTML = champion;
+			node.appendChild(link);
+			menu.appendChild(node);
+ 		}
 	});
 }
 
@@ -309,13 +305,12 @@ $("#summoner").submit(function() {
 	var input = $("input").val();
 	summoner = input;
 	console.log(input);
-	//clearData();
 	loadUser(input);
 	return false;
 });
 
 // on click of a menu item, filter the matches by champion and reload graph
-$("#dropdownlist a").on("click", function() {
+$("#dropdownlist").on("click", "a", function() {
 	var championName = $(this).html();
 	console.log(championName);
 	//filterByChampion(championName);
