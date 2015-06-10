@@ -5,17 +5,30 @@ import time
 
 API_key = key.getAPIkey()
 #registered_users = {'boxbox': 245353, 'laughinggorz': 21823701, 'wingsofdeathx': 19660288, 'nightblue3': 25850956}
-registered_users = {'dizzyyy': 23109706}
+#registered_users = {'dizzyyy': 23109706, 'laughinggorz': 21823701}
 #returns the array of matches for a given summoner in JSON format
-# if no file exists, create a json file with an empty array for matches
-def load_database(summoner_name): 
-	with open(summoner_name + '.json', 'a+') as f:
+def load_database(summoner_name, summoner_id): 
+	with open('json/' + summoner_name + '.json', 'a+') as f:
+		# if no file exists, create a json file with an empty array for matches and update the registered users list
 		if f.tell() == 0:
 			f.write('[]')
+			updateRegisteredUsers(summoner_name, summoner_id)
 		f.seek(0)
 		return json.load(f)
 	#print matches
 
+def load_registered_users():
+	with open('json/summoners.json', 'r') as f:
+		if f.tell() == 0:
+			f.write('[]')
+		users = json.load(f)
+	return users
+
+def update_registered_users(summoner_name, summoner_id):
+	users = load_registered_users()
+	users[summoner_name] = summoner_id
+	with open('json/summoners.json', 'w') as f:
+   		json.dump(users, f)
 
 
 #gets a new array of matches without other participants from the Riot API and appends any new ones to the current array
@@ -83,12 +96,12 @@ def get_other_participants(champion_id, match_id):
 
 #writes the new updated array to file	
 def write(summoner_name):
-	with open(summoner_name + '.json', 'w') as fp:
+	with open('json/' + summoner_name + '.json', 'w') as fp:
    		json.dump(matches, fp)
 
 # iterate through the list of summoner name and id pairs
 for summoner_name, summoner_id in registered_users.items():
-	matches = load_database(summoner_name)
+	matches = load_database(summoner_name, summoner_id)
 	for match in matches:
 		print match['matchId']
 	print summoner_name + ": "

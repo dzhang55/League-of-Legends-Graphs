@@ -1,12 +1,35 @@
 <!DOCTYPE html>
-
 <html lang="en">
-	<head>
-		<meta charset="utf-9" />
-		<title>Most Played Champions</title>
-		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-	</head>
-	<body>
-		<script src="/bubblegraphchampions.js"></script>
-	</body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+ 
+    <title>LoL Stats</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+  </head>
+  <body>
+    <h1 align = 'center'>LoL Stats</h1>
+
+    <form>
+      <div class="input-group input-group-lg">
+        <input type="text" class="form-control" placeholder="Summoner Name" aria-describedby="basic-addon">
+        <span class="input-group-addon"><span class="glyphicon glyphicon-search" id="basic-addon"></span></span> 
+      </div>
+    </form>
+
+      <div align = center class="svg-container">
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <!--<script src="js/search.js"></script> -->
+    <script src="js/bubblegraphchampions.js" charset="utf-8"></script>
+  </body>
 </html>
