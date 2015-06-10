@@ -19,21 +19,38 @@ var svg = d3.select("div.svg-container").append("svg")
 	.attr("width", diameter)
 	.attr("height", diameter);
 
-var championName = [];
+var championNames = [];
 var registeredUsers = [];
+var dataset = [];
+var summoner = "";
 
 // TO USE: booleans that each match must go through
 var filters = [];
 
+// temporary for testing, adds filter for only riven games
 function onlyRiven() {
 	filters.push(function (match){
 		return match.player.championId == 92;
 	})
 }
 
+// adds a filter function based on specific champion
+function filterByChampion(championName) {
+	filters.push(function (match){
+		championId = championNames.indexOf(championName);
+		return match.player.championId == championId;
+	})
+}
+
+function filterByDate() {
+
+}
+
+// passes a given match through all filter functions
 function validMatch(match) {
 	for (var i = 0; i < filters.length; i++) {
 		if (!filters[i](match)) {
+			console.log("not riven!!!");
 			return false;
 		}
 	}
@@ -43,7 +60,6 @@ function validMatch(match) {
 // loads data from games.json file to calculate winrate against specific champions
 // 100% Malphite means you win 100% of the time against Malphite
 function loadSummonerData(json) {
-	var dataset = [];
 
 	// change from hardcoding later
 	//d3.json("../json/dizzyyy30games.json", function(error, matches) {
@@ -51,15 +67,18 @@ function loadSummonerData(json) {
 		// array of all the objects for match data
 		for (var i = 0; i < matches.length; i++) {
 			
-			// INSERT BOOLEAN TO SKIP CERTAIN MATCHES THAT CAN BE ADJUSTED FOR ITEM, CHAMPION, MATCH LENGTH, ETC
 			var team = matches[i].player.teamId;
 
 			// fellowPlayers if using games.json, participants if using .json
 			var participants = matches[i].participants;
 			var win = matches[i].player.stats.winner;
+
+			//SKIP CERTAIN MATCHES THAT CAN BE ADJUSTED FOR ITEM, CHAMPION, MATCH LENGTH, ETC
 			if (!validMatch(matches[i])) {
+				console.log("filtered out match");
 				continue;
 			}
+
 			for (var j = 0; j < participants.length; j++) {
 				if (participants[j].teamId != team) {
 					var champion = participants[j].championId;
@@ -82,6 +101,7 @@ function loadSummonerData(json) {
 		dataset = dataset.filter(function (d) {
 			return d != undefined;
 		})
+
 		console.log(sumDataset(dataset));
 
 		visualizeData({"children" : dataset});
@@ -120,17 +140,19 @@ function loadData() {
 	});
 }
 
+// constructs an array of champion names with indices corresponding to champion ids
 function loadChampionNames() {
 	d3.json("../json/champion.json", function(error, champions) {
 
 		for (var champion in champions.data) {
 		//	console.log(json.data[champion].key);
 		//	console.log(champion);
-			championName[parseInt(json.data[champion].key)] = champion;
+			championNames[parseInt(champions.data[champion].key)] = champion;
 		}
 	});
 }
 
+// takes a dataset and constructs a bubble graph, displaying winrates against champions, with size relative to total games and
 function visualizeData(dataTree) {
 			//console.log(dataTree.children);
 	// removes the current graph
@@ -165,7 +187,7 @@ function visualizeData(dataTree) {
 		.attr("dy", ".3em")
 		.text(function (d) {
 			var winRate = 100 * d.win / d.total;
-			return championName[d.name] + ' ' +  winRate.toFixed(2) + '%';
+			return championNames[d.name] + ' ' +  winRate.toFixed(2) + '%';
 		});
 }
 
@@ -178,7 +200,7 @@ function loadSummonerDataSmite() {
 		// array of all the objects for match data
 		for (var i = 0; i < matches.length; i++) {
 			if (matches[i].spell1 != 11) continue;
-			console.log(championName[matches[i].championId]);
+			console.log(championNames[matches[i].championId]);
 			var team = matches[i].teamId;
 			var players = matches[i].fellowPlayers;
 			var win = matches[i].stats.win;
@@ -217,16 +239,19 @@ function sumDataset(dataset) {
 	return sum;
 }
 
+// uses the summoner name to load the corresponding json
 function loadUser(input) {
 	loadSummonerData("../json/" + input.toLowerCase() + ".json")
 	console.log("user loaded");
 }
 
+// not in use, clears graph
 function clearData() {
 	console.log("cleared");
 	d3.svg.selectAll(".node").remove();
 }
 
+// not in use yet, loads the list of registered users
 function loadRegisteredUsers() {
 	d3.json("../json/summoners.json", function(error, users) {
 		registeredUsers = users;
@@ -235,15 +260,41 @@ function loadRegisteredUsers() {
 
 console.time("test");  // log start timestamp
 loadChampionNames();
-registeredUsers = loadRegisteredUsers();
+//registeredUsers = loadRegisteredUsers();
 //onlyRiven();
 //loadSummonerData();
-$("form").submit(function() {
+
+// on submission of search, load the graph for a given user
+$("#summoner").submit(function() {
 	console.log("SUBMITTED");
 	var input = $("input").val();
+	summoner = input;
 	console.log(input);
 	//clearData();
 	loadUser(input);
 	return false;
 });
+
+// on click of a menu item, filter the matches by champion and reload graph
+$('a[role="menuitem"]').on('click', function() {
+	var championName = $(this).html();
+	console.log(championName);
+	filterByChampion(championName);
+	loadUser(summoner)
+
+	return true;
+});
+
+//$('.dropdown-toggle').dropdown()
+
+// var datepicker = $('.datepicker').datepicker();
+// datepicker.on('show', function() {
+// 	console.log("hi");
+// 	});
+// datepicker.on('changeDate', function(e) {
+// 	datepicker.datepicker('hide');
+// 	 console.log($('#date').input);
+// 	//datepicker.datepicker('setValue', value)
+// 	});
+
 console.timeEnd("test");
