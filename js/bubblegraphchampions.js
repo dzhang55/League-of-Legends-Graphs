@@ -176,7 +176,6 @@ function loadChampionNames() {
  		//	console.log(json.data[champion].key);
  		//	console.log(champion);
 			championNames[parseInt(champions.data[champion].key)] = champion;
-			championNames[parseInt(champions.data[champion].key)] = champion;
 			var node = document.createElement("li");
 			var link = document.createElement("a");
 			link.setAttribute("role", "menuitem");
@@ -214,18 +213,51 @@ function visualizeData(dataTree) {
 		.attr("r", function (d) {
 			return d.r;
 		})
+		.style("fill", "white")
+		.attr("stroke", "white")
+		.attr("stroke-width", "2px")
+		.transition()
+		.duration(3000)
 		.style("fill", function (d) {
 			return color(d.name);
+		})
+		.attr("stroke", function(d) {
+			return d3.rgb(color(d.name)).darker(3);
 		});
+        
+	 node.append("text")
+	 	.style("text-anchor", "middle")
+	 	// shift text down closer to center
+	 	.attr("dy", ".3em")
+	 	.text(function (d) {
+	 		var winRate = 100 * d.win / d.total;
+	 		return winRate.toFixed(2) + '%';
+	 	})
+	 	.style("fill", "white")
+	 	.transition()
+	 	.duration(3000)
+	 	.style("fill", "black");
 
-	node.append("text")
-		.style("text-anchor", "middle")
-		// shift text down closer to center
-		.attr("dy", ".3em")
-		.text(function (d) {
-			var winRate = 100 * d.win / d.total;
-			return championNames[d.name] + ' ' +  winRate.toFixed(2) + '%';
-		});
+	node.on("mouseover", function(d) {
+        d3.select(this)
+        .select("text")
+        .style("pointer-events", "none")
+       // .style("z-index", "1")
+	 	// shift text down closer to center
+        .text(function(d){
+        	var winRate = 100 * d.win / d.total;
+	 		return championNames[d.name] + ' ' +  winRate.toFixed(2) + '%';
+	 	});
+    });
+
+    node.on("mouseout", function(d) {
+        d3.select(this)
+        .select("text")
+        .text(function (d) {
+	 		var winRate = 100 * d.win / d.total;
+	 		return winRate.toFixed(2) + '%';
+	 	});
+	});
 }
 
 // test to see if filtering by smite works
@@ -295,6 +327,14 @@ function loadRegisteredUsers() {
 	})
 }
 
+function adjustButton(championName) {
+	var button = $("#dropdownmenu1");
+	var children = button.children();
+	button.html(championName + " ");
+	button.append(children);
+
+}
+
 console.time("test");  // log start timestamp
 loadChampionNames();
 
@@ -306,6 +346,8 @@ $("#summoner").submit(function() {
 	summoner = input;
 	console.log(input);
 	loadUser(input);
+
+	// stops default events and propagation
 	return false;
 });
 
@@ -313,6 +355,8 @@ $("#summoner").submit(function() {
 $("#dropdownlist").on("click", "a", function() {
 	var championName = $(this).html();
 	console.log(championName);
+	//console.log($("#dropdownmenu1"));
+	adjustButton(championName);
 	//filterByChampion(championName);
 	if (championName == "All Champions") {
 		currChampionId = 0;
@@ -321,8 +365,6 @@ $("#dropdownlist").on("click", "a", function() {
 	}
 	console.log(currChampionId);
 	loadUser(summoner)
-
-	return true;
 });
 console.log("a function loaded");
 
