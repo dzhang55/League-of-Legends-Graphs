@@ -3,7 +3,7 @@ var URL_START = "https://s3-us-west-1.amazonaws.com/riot-api/seed_data";
 var QUERY = "matches1.json";
 
 // diameter for the entire svg
-var diameter = 900;
+var diameter = 1000;
 
 // d3 function that provides a scale with a selection of 20 colors 
 var color = d3.scale.category20c();
@@ -27,6 +27,28 @@ var currChampionId = 0;
 
 // TO USE: booleans that each match must go through
 var filters = [];
+
+// constructs an array of champion names with indices corresponding to champion ids
+// loads asynchonously because dropdown menu is dependent on it
+function loadChampionNames() {
+	d3.json("../json/champion.json", function(error, champions) {
+
+		var menu = document.getElementById("dropdownlist");
+ 		for (var champion in champions.data) {
+ 		//	console.log(json.data[champion].key);
+ 		//	console.log(champion);
+			championNames[parseInt(champions.data[champion].key)] = champion;
+			var node = document.createElement("li");
+			var link = document.createElement("a");
+			link.setAttribute("role", "menuitem");
+			link.setAttribute("tabindex", "-1");
+			link.href = "#";
+			link.innerHTML = champion;
+			node.appendChild(link);
+			menu.appendChild(node);
+ 		}
+	});
+}
 
 // temporary for testing, adds filter for only riven games
 function onlyRiven() {
@@ -114,6 +136,7 @@ function loadSummonerData(json) {
 				//}
 				//dataset[summoner].total++;
 			}
+
 		dataset = dataset.filter(function (d) {
 			return d != undefined;
 		})
@@ -125,13 +148,48 @@ function loadSummonerData(json) {
 			return;
 		}
 
+
 		visualizeData({"children" : dataset});
 	});
 }
 
-// add some error that there is no data?
+// creates giant teemo bubble
 function noData() {
 	svg.selectAll(".node").remove();
+	// teemo error!
+	var dataset = [];
+	dataset.push({name : 17, value : 1});
+	console.log(dataset);
+	var dataTree = {"children" : dataset};
+	console.log(dataTree);
+	var node = svg.selectAll(".node")
+		.data(bubbleLayout.nodes(dataTree)
+		.filter(function (d) { 
+			return !d.children;
+			}))
+		.enter()
+		// group container
+		.append("g")
+		.attr("class", "node")
+		.attr("transform", function(d) {
+			return "translate(" + d.x + "," + d.y + ")";
+		});
+
+	appendCircles(node);
+	appendImages(node);
+	node.append("text")
+		 .style("text-anchor", "middle")
+	 	// shift text down closer to center
+	 	.text("No Data")
+	 	.style("font-size", "100px")
+	 	.style("stroke", "black")
+	 	.style("stroke-width", "5px")
+	 	.style("fill", "white")
+		.style("opacity", 0)
+		.transition()
+		.duration(2000)
+		.style("opacity", 1);
+	
 }
 
 // no longer using this function
@@ -166,41 +224,30 @@ function loadData() {
 	});
 }
 
-// constructs an array of champion names with indices corresponding to champion ids
-// loads asynchonously because dropdown menu is dependent on it
-function loadChampionNames() {
-	d3.json("../json/champion.json", function(error, champions) {
-
-		var menu = document.getElementById("dropdownlist");
- 		for (var champion in champions.data) {
- 		//	console.log(json.data[champion].key);
- 		//	console.log(champion);
-			championNames[parseInt(champions.data[champion].key)] = champion;
-			var node = document.createElement("li");
-			var link = document.createElement("a");
-			link.setAttribute("role", "menuitem");
-			link.setAttribute("tabindex", "-1");
-			link.href = "#";
-			link.innerHTML = champion;
-			node.appendChild(link);
-			menu.appendChild(node);
- 		}
-	});
-}
-
 // takes a dataset and constructs a bubble graph, displaying winrates against champions, with size relative to total games and
 function visualizeData(dataTree) {
-			//console.log(dataTree.children);
+	console.log(dataTree);
 	// removes the current graph
 	svg.selectAll(".node").remove();
 
-	// selects all (currently non-existent nodes) in svg and uses nodes made from a tree of the dataset (with the root node filtered out)
-	// enter() creates placeholders and then uses the dataset to fill these placeholders
-	var node = svg.selectAll(".node")
+	createNodes(dataTree);
+	var nodes = svg.selectAll(".node")
+
+	appendCircles(nodes);
+	appendImages(nodes);
+	appendText(nodes);
+	appendHover(nodes);
+}
+
+// selects all (currently non-existent nodes) in svg and uses nodes made from a tree of the dataset
+function createNodes(dataTree) {
+	svg.selectAll(".node")
 		.data(bubbleLayout.nodes(dataTree)
+			// filters out the parent node
 			.filter(function (d) { 
 				return !d.children;
 				}))
+		// enter() creates placeholders and then uses the dataset to fill these placeholders
 		.enter()
 		// group container
 		.append("g")
@@ -208,95 +255,94 @@ function visualizeData(dataTree) {
 		.attr("transform", function(d) {
 			return "translate(" + d.x + "," + d.y + ")";
 		});
+}
 
-	node.append("circle")
+function appendCircles(nodes) {
+	nodes.append("circle")
 		.attr("r", function (d) {
 			return d.r;
 		})
+		.attr("stroke-width", "2px")
 		.style("fill", "white")
 		.attr("stroke", "white")
-		.attr("stroke-width", "2px")
 		.transition()
-		.duration(3000)
+		.duration(2000)
 		.style("fill", function (d) {
 			return color(d.name);
 		})
 		.attr("stroke", function(d) {
 			return d3.rgb(color(d.name)).darker(3);
 		});
-        
-	 node.append("text")
-	 	.style("text-anchor", "middle")
-	 	// shift text down closer to center
-	 	.attr("dy", ".3em")
-	 	.text(function (d) {
-	 		var winRate = 100 * d.win / d.total;
-	 		return winRate.toFixed(2) + '%';
-	 	})
-	 	.style("fill", "white")
-	 	.transition()
-	 	.duration(3000)
-	 	.style("fill", "black");
-
-	node.on("mouseover", function(d) {
-        d3.select(this)
-        .select("text")
-        .style("pointer-events", "none")
-       // .style("z-index", "1")
-	 	// shift text down closer to center
-        .text(function(d){
-        	var winRate = 100 * d.win / d.total;
-	 		return championNames[d.name] + ' ' +  winRate.toFixed(2) + '%';
-	 	});
-    });
-
-    node.on("mouseout", function(d) {
-        d3.select(this)
-        .select("text")
-        .text(function (d) {
-	 		var winRate = 100 * d.win / d.total;
-	 		return winRate.toFixed(2) + '%';
-	 	});
-	});
 }
 
-// test to see if filtering by smite works
-function loadSummonerDataSmite() {
-	var dataset = [];
-
-	// change from hardcoding later
-	d3.json("../json/wingsofdeathxgames.json", function(error, matches) {
-		// array of all the objects for match data
-		for (var i = 0; i < matches.length; i++) {
-			if (matches[i].spell1 != 11) continue;
-			console.log(championNames[matches[i].championId]);
-			var team = matches[i].teamId;
-			var players = matches[i].fellowPlayers;
-			var win = matches[i].stats.win;
-			for (var j = 0; j < players.length; j++) {
-				if (players[j].teamId != team) {
-					var champion = players[j].championId;
-					if (champion in dataset) {
-						dataset[champion].value++;
-					} else {
-						dataset[champion] = {name : champion, value : 1, win : 0, total : 0};
-					} 
-					if (win) {
-						dataset[champion].win++;
-					}
-					dataset[champion].total++;
-					}
-				}
-				//	dataset[summoner].win++;
-				//}
-				//dataset[summoner].total++;
-			}
-		dataset = dataset.filter(function (d) {
-			return d != undefined;
+function appendImages(nodes) {
+	nodes.append("svg:image")
+		.style("opacity", 0)
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.style("opacity", 1)
+		.attr("x", function (d) {
+			return - 0.95 * d.r / Math.sqrt(2);
 		})
+		.attr("y", function (d) {
+			return - 0.95 * d.r / Math.sqrt(2);
+		})
+        .attr("xlink:href", function (d) {
+          	return "/images/champions/" + championNames[d.name] + ".png";
+        })
+        .style("width", function (d) {
+        	return 0.95 * Math.sqrt(2) * d.r;
+        })
+        .style("height", function (d) {
+        	return 0.95 * Math.sqrt(2) * d.r;
+        });
+}
 
-		visualizeData({"children" : dataset});
-	});
+function appendText(nodes) {
+	nodes.append("text")
+	 	.style("text-anchor", "middle")
+	 	// shift text down closer to center
+	 	.attr("y", function (d) {
+	 		return 0.6 * d.r;
+	 	})
+	 	.text(winrate)
+	 	.style("fill", "white")
+		.style("opacity", 0)
+		.transition()
+		.duration(2000)
+		.style("opacity", 1);
+}
+
+// displays winrate with precision depending on the size of the bubble
+function winrate(d) {
+	var winRate = 100 * d.win / d.total;
+	if (d.r > 35) {
+		return winRate.toFixed(2) + '%';
+	} else if (d.r > 20) {
+		return winRate.toFixed(0) + '%';
+	} else {
+	return "";
+	}
+}
+
+// appends a (slightly opaque) black circle that only appears when hovering
+function appendHover(nodes) {
+	nodes.append("circle")
+		.attr("r", function (d) {
+			return d.r;
+		})
+		.attr("id", "hover")
+		.style("fill", "black")
+		.style("opacity", 0)
+		.on("mouseover", function (d) {
+			d3.select(this)
+				.style("opacity", 0.2);
+		})
+		.on("mouseout", function (d) {
+			d3.select(this)
+				.style("opacity", 0);
+		});
 }
 
 function sumDataset(dataset) {
@@ -337,7 +383,6 @@ function adjustButton(championName) {
 
 console.time("test");  // log start timestamp
 loadChampionNames();
-
 
 // on submission of search, load the graph for a given user
 $("#summoner").submit(function() {
