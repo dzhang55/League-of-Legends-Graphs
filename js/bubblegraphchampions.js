@@ -302,12 +302,19 @@ function appendImages(nodes) {
 function appendText(nodes) {
 	nodes.append("text")
 	 	.style("text-anchor", "middle")
-	 	// shift text down closer to center
 	 	.attr("y", function (d) {
 	 		return 0.6 * d.r;
 	 	})
-	 	.text(winrate)
-	 	.style("fill", "white")
+	 	.text(adjustedWinRate)
+	 	// .style("fill", function (d) {
+	 	// 	var winRate = 100 * d.win / d.total;
+	 	// 	if (winRate < 49) {
+	 	// 		return "red"
+	 	// 	} else {
+	 	// 		return "white"
+	 	// 	}
+	 	// })
+		.style("fill", "white")
 		.style("opacity", 0)
 		.transition()
 		.duration(2000)
@@ -315,7 +322,7 @@ function appendText(nodes) {
 }
 
 // displays winrate with precision depending on the size of the bubble
-function winrate(d) {
+function adjustedWinRate(d) {
 	var winRate = 100 * d.win / d.total;
 	if (d.r > 35) {
 		return winRate.toFixed(2) + '%';
@@ -332,9 +339,17 @@ function appendHover(nodes) {
 		.attr("r", function (d) {
 			return d.r;
 		})
-		.attr("id", "hover")
+		.attr("class", "hover")
 		.style("fill", "black")
 		.style("opacity", 0)
+		.attr("data-toggle","popover")
+		.attr("title", function (d) {
+			return championNames[d.name];
+		})
+		.attr("data-content", function (d) {
+			var winRate = 100 * d.win / d.total;
+			return "Won " + winRate.toFixed(2) + "% of " + d.total + " games";
+		})
 		.on("mouseover", function (d) {
 			d3.select(this)
 				.style("opacity", 0.2);
@@ -343,6 +358,8 @@ function appendHover(nodes) {
 			d3.select(this)
 				.style("opacity", 0);
 		});
+	// settings for the popover display
+	$(".hover").popover({trigger: "hover", container: "body", placement: "auto top"});
 }
 
 function sumDataset(dataset) {
@@ -373,6 +390,7 @@ function loadRegisteredUsers() {
 	})
 }
 
+// change button name to selected champion
 function adjustButton(championName) {
 	var button = $("#dropdownmenu1");
 	var children = button.children();
@@ -412,6 +430,8 @@ $("#dropdownlist").on("click", "a", function() {
 	loadUser(summoner)
 });
 console.log("a function loaded");
+
+$(".svg-container").popover({placement : "top", viewport : ".svg-container"});
 
 //$('.dropdown-toggle').dropdown()
 
