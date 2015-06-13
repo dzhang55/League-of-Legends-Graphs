@@ -5,14 +5,17 @@ var QUERY = "matches1.json";
 // diameter for the entire svg
 var diameter = 1000;
 
+// transition time in ms
+var time = 1000;
+
 // d3 function that provides a scale with a selection of 20 colors 
 var color = d3.scale.category20c();
 
 // uses d3 pack function which creates the bubble layout
 var bubbleLayout = d3.layout.pack()
-	.sort(null)
+	.sort(d3.descending)
 	.size([diameter, diameter])
-	.padding(1);
+	.padding(5);
 
 // creates the svg
 var svg = d3.select("div.svg-container").append("svg")
@@ -180,7 +183,6 @@ function noData() {
 	node.append("text")
 		 .style("text-anchor", "middle")
 	 	// shift text down closer to center
-	 	.text("No Data")
 	 	.style("font-size", "100px")
 	 	.style("stroke", "black")
 	 	.style("stroke-width", "5px")
@@ -188,6 +190,7 @@ function noData() {
 		.style("opacity", 0)
 		.transition()
 		.duration(2000)
+		.text("No Data")
 		.style("opacity", 1);
 	
 }
@@ -226,35 +229,109 @@ function loadData() {
 
 // takes a dataset and constructs a bubble graph, displaying winrates against champions, with size relative to total games and
 function visualizeData(dataTree) {
-	console.log(dataTree);
-	// removes the current graph
-	svg.selectAll(".node").remove();
+
+	// nodes.transition()
+ //    	.delay(function(d, i) {delay = i * 7; return delay;})
+ //   		.attr('transform', function(d) { 
+ //   			return 'translate(' + d.x + ',' + d.y + ')'; })
+ //   		.attr('r', function(d) { return d.r; })
 
 	createNodes(dataTree);
-	var nodes = svg.selectAll(".node")
-
-	appendCircles(nodes);
-	appendImages(nodes);
-	appendText(nodes);
-	appendHover(nodes);
+	// appendCircles(nodes);
+	// appendImages(nodes);
+	// appendText(nodes);
+	// appendHover(nodes);
 }
 
 // selects all (currently non-existent nodes) in svg and uses nodes made from a tree of the dataset
 function createNodes(dataTree) {
-	svg.selectAll(".node")
+	var existingNodes = svg.selectAll(".node")
 		.data(bubbleLayout.nodes(dataTree)
 			// filters out the parent node
 			.filter(function (d) { 
 				return !d.children;
-				}))
-		// enter() creates placeholders and then uses the dataset to fill these placeholders
-		.enter()
-		// group container
-		.append("g")
-		.attr("class", "node")
-		.attr("transform", function(d) {
-			return "translate(" + d.x + "," + d.y + ")";
+				}), function (d) {
+				return d.name;
+			});
+
+		// remove nodes that do not have a corresponding data value
+		// i.e. champions that no longer have bubbles
+
+	var exitingNodes = existingNodes
+		.exit()
+		.transition()
+		.duration(time)
+		.attr("transform", "translate(" + diameter + ",0)")
+		.style("opacity", 0)
+		.remove();
+
+
+	 existingNodes
+	 	.transition()
+	 	.duration(time)
+	 	.attr("transform", function(d) {
+	 		return "translate(" + d.x + "," + d.y + ")";
+	 	});
+
+	existingNodes.select("circle")
+		.transition()
+		.duration(time)
+		.attr("r", function (d) {
+			return d.r;
 		});
+	existingNodes.select("image")
+		.transition()
+		.duration(time)
+		// use attr instead of style allows d3 to transition properly
+		.attr("style", function (d) {
+         	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px"
+        })
+		.attr("x", function (d) {
+			return - 0.95 * d.r / Math.sqrt(2);
+		})
+		.attr("y", function (d) {
+			return - 0.95 * d.r / Math.sqrt(2);
+		});
+
+    existingNodes.select("text")
+    	.transition()
+		.duration(time)
+    	.attr("y", function (d) {
+	 		return 0.6 * d.r;
+	 	})
+	 	.text(adjustedWinRate)
+	// 	});
+		// if (!nodes.empty()) {
+		// //console.log("this should not be happening");
+		// nodes.filter(function (d) {
+		// 	console.log(dataTree.children);
+		// 	for (var i = 0; i < dataTree.children.length; i++) {
+		// 		if (d.name == dataTree.children[i].name) {
+		// 			return false;
+		// 		}
+		// 	}
+		// 	return true;
+		// }).exit().remove();
+		// }
+		// enter() creates placeholders and then uses the dataset to fill these placeholders
+	var enteringNodes = existingNodes.enter()
+		// group container
+			.append("g")
+			.attr("class", "node")
+			.attr("transform", "translate(" + diameter + ",0)");
+
+	enteringNodes.transition()
+		.duration(1.5 * time)
+		.attr("transform", function(d) {
+	 		return "translate(" + d.x + "," + d.y + ")";
+	 	});
+	appendCircles(enteringNodes);
+	appendImages(enteringNodes);
+	appendText(enteringNodes);
+	appendHover(enteringNodes);
+
+
+
 }
 
 function appendCircles(nodes) {
@@ -263,34 +340,37 @@ function appendCircles(nodes) {
 			return d.r;
 		})
 		.attr("stroke-width", "2px")
-		.style("fill", "white")
-		.attr("stroke", "white")
-		.transition()
-		.duration(2000)
+		.style("opacity", 0)
 		.style("fill", function (d) {
 			return color(d.name);
 		})
 		.attr("stroke", function(d) {
 			return d3.rgb(color(d.name)).darker(3);
-		});
+		})
+		.transition()
+		.duration(time)
+		.delay(time / 2)
+		.style("opacity", 1);
 }
 
 function appendImages(nodes) {
 	nodes.append("svg:image")
 		.style("opacity", 0)
 		.transition()
-		.delay(1000)
-		.duration(1000)
+		.delay(time / 2)
+		.duration(time)
 		.style("opacity", 1)
 		.attr("x", function (d) {
-			return - 0.95 * d.r / Math.sqrt(2);
+			return - 0.95 * d.r / Math.sqrt(2) + "px";
 		})
 		.attr("y", function (d) {
-			return - 0.95 * d.r / Math.sqrt(2);
+			return - 0.95 * d.r / Math.sqrt(2) + "px";
 		})
         .attr("xlink:href", function (d) {
           	return "/images/champions/" + championNames[d.name] + ".png";
         })
+        // transition doesn't work on these so the images don't transition in size when created
+        // possible bug in d3?
         .style("width", function (d) {
         	return 0.95 * Math.sqrt(2) * d.r;
         })
@@ -317,7 +397,8 @@ function appendText(nodes) {
 		.style("fill", "white")
 		.style("opacity", 0)
 		.transition()
-		.duration(2000)
+		.duration(time)
+		.delay(time / 2)
 		.style("opacity", 1);
 }
 
