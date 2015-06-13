@@ -164,14 +164,18 @@ function visualizeData(dataTree) {
 			// filters out the parent node
 			.filter(function (d) { 
 				return !d.children;
-				}), function (d) {
+				}), 
+			// key function to identify nodes
+			function (d) {
 				return d.name;
 			});
+
 
 	// exit() refers to the selection with elements but missing data 
 	// i.e. removes nodes of champions with no bubbles
 	removeExitingNodes(allNodes.exit());
 
+	// selection of existing nodes with data
 	updateExistingNodes(allNodes);
 
 	// enter() refers to the selection with data but missing elements
@@ -192,137 +196,62 @@ function updateExistingNodes(nodes) {
 	 		return "translate(" + d.x + "," + d.y + ")";
 	 	});
 
-	nodes.select("circle")
+	setCircle(nodes.select("circle")
 		.transition()
-		.duration(time)
-		.attr("r", function (d) {
-			return d.r;
-		});
+		.duration(time));
 
-	nodes.select("image")
+	setImage(nodes.select("image")
 		.transition()
-		.duration(time)
-		// use attr instead of style allows d3 to transition properly
-		.attr("style", function (d) {
-         	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px"
-        })
-		.attr("x", function (d) {
-			return - 0.95 * d.r / Math.sqrt(2);
-		})
-		.attr("y", function (d) {
-			return - 0.95 * d.r / Math.sqrt(2);
-		});
+		.duration(time));
 
-    nodes.select("text")
+    setText(nodes.select("text")
     	.transition()
-		.duration(time)
-    	.attr("y", function (d) {
-	 		return 0.6 * d.r;
-	 	})
-	 	.text(adjustedWinRate)
+		.duration(time));
+
+    setHover(nodes.select(".hover"))
 }
 
 function addEnteringNodes(nodes) {
-	nodes
-		.attr("class", "node")
+
+	nodes.attr("class", "node")
 		.attr("transform", "translate(" + diameter + ",0)")
 		.transition()
 		.duration(1.5 * time)
 		.attr("transform", function(d) {
 	 		return "translate(" + d.x + "," + d.y + ")";
 	 	});
-	appendCircles(nodes);
-	appendImages(nodes);
-	appendText(nodes);
-	appendHover(nodes);
-}
 
-function appendCircles(nodes) {
-	nodes.append("circle")
-		.attr("r", function (d) {
-			return d.r;
-		})
-		.attr("stroke-width", "2px")
-		.style("opacity", 0)
+	// append circles  	
+	var circle = nodes.append("circle");
+	setCircle(circle);
+	circle.attr("stroke-width", "2px")
 		.style("fill", function (d) {
 			return color(d.name);
 		})
 		.attr("stroke", function(d) {
 			return d3.rgb(color(d.name)).darker(3);
-		})
-		.transition()
-		.duration(time)
-		.delay(time / 2)
-		.style("opacity", 1);
-}
+		});
+	fadeIn(circle);
 
-function appendImages(nodes) {
-	nodes.append("svg:image")
-		.style("opacity", 0)
-		//used attr instead of .style() because the transition was not working with style
-		// possible d3 bug?
-		.attr("style", function (d) {
-         	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px"
-        })
-		.transition()
-		.delay(time / 2)
-		.duration(time)
-		.style("opacity", 1)
-		.attr("x", function (d) {
-			return - 0.95 * d.r / Math.sqrt(2) + "px";
-		})
-		.attr("y", function (d) {
-			return - 0.95 * d.r / Math.sqrt(2) + "px";
-		})
-        .attr("xlink:href", function (d) {
-          	return "/images/champions/" + championNames[d.name] + ".png";
-        })
+	// append images
+	var image = nodes.append("svg:image");
+	setImage(image);
+	image.attr("xlink:href", function (d) {
+        return "/images/champions/" + championNames[d.name] + ".png";
+    });
+	fadeIn(image);
 
-}
+	// append text
+	var text = nodes.append("text");
+	setText(text);
+	text.style("text-anchor", "middle")
+		.style("fill", "white");
+	fadeIn(text);
 
-function appendText(nodes) {
-	nodes.append("text")
-	 	.style("text-anchor", "middle")
-	 	.attr("y", function (d) {
-	 		return 0.6 * d.r;
-	 	})
-	 	.text(adjustedWinRate)
-	 	// .style("fill", function (d) {
-	 	// 	var winRate = 100 * d.win / d.total;
-	 	// 	if (winRate < 49) {
-	 	// 		return "red"
-	 	// 	} else {
-	 	// 		return "white"
-	 	// 	}
-	 	// })
-		.style("fill", "white")
-		.style("opacity", 0)
-		.transition()
-		.duration(time)
-		.delay(time / 2)
-		.style("opacity", 1);
-}
-
-// displays winrate with precision depending on the size of the bubble
-function adjustedWinRate(d) {
-	var winRate = 100 * d.win / d.total;
-	if (d.r > 35) {
-		return winRate.toFixed(2) + '%';
-	} else if (d.r > 20) {
-		return winRate.toFixed(0) + '%';
-	} else {
-	return "";
-	}
-}
-
-// appends a (slightly opaque) black circle that only appears when hovering
-function appendHover(nodes) {
-	nodes.append("circle")
-		.attr("r", function (d) {
-			return d.r;
-		})
-		.attr("class", "hover")
-		.style("fill", "black")
+	// append hover
+	var hover = nodes.append("circle");
+	setHover(hover);
+	hover.style("fill", "black")
 		.style("opacity", 0)
 		.attr("data-toggle","popover")
 		.attr("title", function (d) {
@@ -343,6 +272,66 @@ function appendHover(nodes) {
 	// settings for the popover display
 	$(".hover").popover({trigger: "hover", container: "body", placement: "auto top"});
 }
+
+function setCircle(circle) {
+	circle.attr("r", function (d) {
+			return d.r;
+	});
+}
+
+// sets the attrs updated for existing and entering nodes
+function setImage(image) {
+	// using attr instead of style allows d3 to transition properly
+	image.attr("style", function (d) {
+        	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px"
+    })
+        // must be transitioned in udpate but not append because the circles may change in size
+        .attr("x", function (d) {
+			return - 0.95 * d.r / Math.sqrt(2) + "px";
+		})
+		.attr("y", function (d) {
+			return - 0.95 * d.r / Math.sqrt(2) + "px";
+		});
+}
+
+// sets the attrs updated for existing and entering nodes
+function setText(text) {
+	text.text(function (d) {
+		// displays winrate with precision depending on the size of the bubble
+		var winRate = 100 * d.win / d.total;
+		if (d.r > 35) {
+			return winRate.toFixed(2) + '%';
+		} else if (d.r > 20) {
+			return winRate.toFixed(0) + '%';
+		} else {
+			return "";
+		}
+	})
+		.attr("y", function (d) {
+	 		return 0.6 * d.r;
+	 	});
+}
+
+// sets the attrs updated for existing and entering nodes
+function setHover(hoverCircle) {
+	hoverCircle.attr("class", "hover")
+		.attr("r", function (d) {
+			return d.r;
+		})
+		.attr("data-content", function (d) {
+			var winRate = 100 * d.win / d.total;
+			return "Won " + winRate.toFixed(2) + "% of " + d.total + " games";
+		})
+}
+
+// takes in a selection and applies a fade in transition to it
+function fadeIn (selection) {
+	    return selection.style("opacity", 0)
+			.transition()
+			.delay(time / 2)
+			.duration(time)
+			.style("opacity", 1);
+		}
 
 function sumDataset(dataset) {
 	var sum = 0;
