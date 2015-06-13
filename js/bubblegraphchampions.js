@@ -356,6 +356,11 @@ function appendCircles(nodes) {
 function appendImages(nodes) {
 	nodes.append("svg:image")
 		.style("opacity", 0)
+		//used attr instead of .style() because the transition was not working with style
+		// possible d3 bug?
+		.attr("style", function (d) {
+         	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px"
+        })
 		.transition()
 		.delay(time / 2)
 		.duration(time)
@@ -369,14 +374,7 @@ function appendImages(nodes) {
         .attr("xlink:href", function (d) {
           	return "/images/champions/" + championNames[d.name] + ".png";
         })
-        // transition doesn't work on these so the images don't transition in size when created
-        // possible bug in d3?
-        .style("width", function (d) {
-        	return 0.95 * Math.sqrt(2) * d.r;
-        })
-        .style("height", function (d) {
-        	return 0.95 * Math.sqrt(2) * d.r;
-        });
+
 }
 
 function appendText(nodes) {
