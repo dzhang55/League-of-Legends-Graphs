@@ -24,7 +24,6 @@ var svg = d3.select("div.svg-container").append("svg")
 
 var championNames = [];
 var registeredUsers = [];
-var dataset = [];
 var summoner = "";
 var currChampionId = 0;
 
@@ -146,9 +145,9 @@ function loadSummonerData(json) {
 
 		console.log(sumDataset(dataset));
 
+		// if there is no data, create 404 teemo graph
 		if (dataset.length == 0) {
-			noData();
-			return;
+			dataset.push({name : 17, value : 1, win : 404, total : 10000});
 		}
 
 
@@ -156,96 +155,11 @@ function loadSummonerData(json) {
 	});
 }
 
-// creates giant teemo bubble
-function noData() {
-	svg.selectAll(".node").remove();
-	// teemo error!
-	var dataset = [];
-	dataset.push({name : 17, value : 1});
-	console.log(dataset);
-	var dataTree = {"children" : dataset};
-	console.log(dataTree);
-	var node = svg.selectAll(".node")
-		.data(bubbleLayout.nodes(dataTree)
-		.filter(function (d) { 
-			return !d.children;
-			}))
-		.enter()
-		// group container
-		.append("g")
-		.attr("class", "node")
-		.attr("transform", function(d) {
-			return "translate(" + d.x + "," + d.y + ")";
-		});
-
-	appendCircles(node);
-	appendImages(node);
-	node.append("text")
-		 .style("text-anchor", "middle")
-	 	// shift text down closer to center
-	 	.style("font-size", "100px")
-	 	.style("stroke", "black")
-	 	.style("stroke-width", "5px")
-	 	.style("fill", "white")
-		.style("opacity", 0)
-		.transition()
-		.duration(2000)
-		.text("No Data")
-		.style("opacity", 1);
-	
-}
-
-// no longer using this function
-function loadData() {
-	var dataset = [];
-
-	d3.json("matches2.json", function(error, json) {
-		// array of all the objects for match data
-		matches = json.matches;
-		for (var i = 0; i < matches.length; i++) {
-			//console.log(matches[i].participants);
-			var participants = matches[i].participants;
-			for (var j = 0; j < participants.length; j++) {
-				var champion = participants[j].championId;
-				if (champion in dataset) {
-					dataset[champion].value++;
-
-				} else {
-					dataset[champion] = { name : champion, value : 1, win : 0, total : 0};
-				}
-				if (participants[j].stats.winner) {
-					dataset[champion].win++;
-				}
-				dataset[champion].total++;
-			}
-		}
-		dataset = dataset.filter(function (d) {
-			return d != undefined;
-		})
-
-		visualizeData({"children" : dataset});
-	});
-}
-
-// takes a dataset and constructs a bubble graph, displaying winrates against champions, with size relative to total games and
+// takes a dataset and constructs a bubble graph
+// displays winrates against champions with size relative to total games
 function visualizeData(dataTree) {
 
-	// nodes.transition()
- //    	.delay(function(d, i) {delay = i * 7; return delay;})
- //   		.attr('transform', function(d) { 
- //   			return 'translate(' + d.x + ',' + d.y + ')'; })
- //   		.attr('r', function(d) { return d.r; })
-
-	createNodes(dataTree);
-	// appendCircles(nodes);
-	// appendImages(nodes);
-	// appendText(nodes);
-	// appendHover(nodes);
-}
-
-// selects all (currently non-existent nodes) in svg and uses nodes made from a tree of the dataset
-function createNodes(dataTree) {
-	var existingNodes = svg.selectAll(".node")
+	var allNodes = svg.selectAll(".node")
 		.data(bubbleLayout.nodes(dataTree)
 			// filters out the parent node
 			.filter(function (d) { 
@@ -254,32 +168,38 @@ function createNodes(dataTree) {
 				return d.name;
 			});
 
-		// remove nodes that do not have a corresponding data value
-		// i.e. champions that no longer have bubbles
+	// exit() refers to the selection with elements but missing data 
+	// i.e. removes nodes of champions with no bubbles
+	removeExitingNodes(allNodes.exit());
 
-	var exitingNodes = existingNodes
-		.exit()
-		.transition()
+	updateExistingNodes(allNodes);
+
+	// enter() refers to the selection with data but missing elements
+	addEnteringNodes(allNodes.enter().append("g"));
+}
+
+function removeExitingNodes(nodes) {
+	nodes.transition()
 		.duration(time)
 		.attr("transform", "translate(" + diameter + ",0)")
 		.style("opacity", 0)
 		.remove();
-
-
-	 existingNodes
-	 	.transition()
+}
+function updateExistingNodes(nodes) {
+	nodes.transition()
 	 	.duration(time)
 	 	.attr("transform", function(d) {
 	 		return "translate(" + d.x + "," + d.y + ")";
 	 	});
 
-	existingNodes.select("circle")
+	nodes.select("circle")
 		.transition()
 		.duration(time)
 		.attr("r", function (d) {
 			return d.r;
 		});
-	existingNodes.select("image")
+
+	nodes.select("image")
 		.transition()
 		.duration(time)
 		// use attr instead of style allows d3 to transition properly
@@ -293,45 +213,28 @@ function createNodes(dataTree) {
 			return - 0.95 * d.r / Math.sqrt(2);
 		});
 
-    existingNodes.select("text")
+    nodes.select("text")
     	.transition()
 		.duration(time)
     	.attr("y", function (d) {
 	 		return 0.6 * d.r;
 	 	})
 	 	.text(adjustedWinRate)
-	// 	});
-		// if (!nodes.empty()) {
-		// //console.log("this should not be happening");
-		// nodes.filter(function (d) {
-		// 	console.log(dataTree.children);
-		// 	for (var i = 0; i < dataTree.children.length; i++) {
-		// 		if (d.name == dataTree.children[i].name) {
-		// 			return false;
-		// 		}
-		// 	}
-		// 	return true;
-		// }).exit().remove();
-		// }
-		// enter() creates placeholders and then uses the dataset to fill these placeholders
-	var enteringNodes = existingNodes.enter()
-		// group container
-			.append("g")
-			.attr("class", "node")
-			.attr("transform", "translate(" + diameter + ",0)");
+}
 
-	enteringNodes.transition()
+function addEnteringNodes(nodes) {
+	nodes
+		.attr("class", "node")
+		.attr("transform", "translate(" + diameter + ",0)")
+		.transition()
 		.duration(1.5 * time)
 		.attr("transform", function(d) {
 	 		return "translate(" + d.x + "," + d.y + ")";
 	 	});
-	appendCircles(enteringNodes);
-	appendImages(enteringNodes);
-	appendText(enteringNodes);
-	appendHover(enteringNodes);
-
-
-
+	appendCircles(nodes);
+	appendImages(nodes);
+	appendText(nodes);
+	appendHover(nodes);
 }
 
 function appendCircles(nodes) {
