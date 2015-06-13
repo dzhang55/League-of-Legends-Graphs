@@ -59,14 +59,6 @@ function onlyRiven() {
 	})
 }
 
-// adds a filter function based on specific champion
-// function filterByChampion(championName) {
-// 	filters.push(function (match){
-// 		championId = championNames.indexOf(championName);
-// 		return match.player.championId == championId;
-// 	})
-// }
-
 // true if in this match, the player plays the selected champion or if no champion is selected
 function filterByChampion(match, championId) {
 	if (championId == 0) {
