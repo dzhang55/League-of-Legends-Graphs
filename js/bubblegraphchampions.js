@@ -276,7 +276,7 @@ function addEnteringNodes(nodes) {
 	var image = nodes.append("svg:image");
 	setImage(image);
 	image.attr("xlink:href", function (d) {
-        return "/images/champions/" + championNames[d.name] + ".png";
+        return "images/champions/" + championNames[d.name] + ".png";
     });
 	fadeIn(image);
 
