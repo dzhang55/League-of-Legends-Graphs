@@ -10,9 +10,15 @@
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
 
+    <style>
+    div {
+      margin: 5px;
+    }
+    </style>
+
   </head>
   <body>
-    <h1 align = 'center'>LoL Stats</h1>
+    <h1 align = "center">LoL Stats</h1>
 
     <form id="summoner">
       <div class="input-group input-group-lg">
@@ -24,23 +30,52 @@
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <div class="dropdown" style="float:right">
-        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownmenu1" data-toggle="dropdown" aria-expanded="true">
+        <button class="btn btn-default dropdown-toggle" type="button" id="championdropdownmenu" data-toggle="dropdown" aria-expanded="true">
           All Champions
           <span class="caret"></span>
         </button>
-        <ul style="overflow-y:scroll;height:50vh" class="dropdown-menu" id="dropdownlist" role="menu" aria-labelledby="dropdownMenu1">
+        <ul style="overflow-y:scroll;height:50vh" class="dropdown-menu" id="championdropdownlist" role="menu" aria-labelledby="dropdownMenu1">
           <li><a role="menuitem" tabindex="-1" href='#'>All Champions</a></li>
           <li class="divider"></li>
         </ul>
       </div>
-        <div class="datepicker" id="dp3" data-date="2012-02-12" data-date-format="yyyy-mm-dd">
-          <input class="span2" size="16" type="date" value="12-02-2012">
-          <span class="add-on"><i class="icon-th"></i></span>
-        </div>
+      <div class="dropdown" style="float:right">
+        <button class="btn btn-default dropdown-toggle" type="button" id="teamdropdownmenu" data-toggle="dropdown" aria-expanded="true">
+          All Teams
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" id="teamdropdownlist" role="menu" aria-labelledby="dropdownMenu1">
+          <li><a role="menuitem" tabindex="-1" href='#'>All Teams</a></li>
+          <li class="divider"></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Blue Team</a></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Red Team</a></li>
+        </ul>
+      </div>
+      <div class="dropdown" style="float:right">
+        <button class="btn btn-default dropdown-toggle" type="button" id="roledropdownmenu" data-toggle="dropdown" aria-expanded="true">
+          All Roles
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" id="roledropdownlist" role="menu" aria-labelledby="dropdownMenu1">
+          <li><a role="menuitem" tabindex="-1" href='#'>All Roles</a></li>
+          <li class="divider"></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Top</a></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Mid</a></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Marksman</a></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Support</a></li>
+          <li><a role="menuitem" tabindex="-1" href='#'>Jungle</a></li>
+        </ul>
+      </div>
+      <div class="datepicker" id="dp3" data-date="2012-02-12" data-date-format="yyyy-mm-dd">
+        <input class="span2" size="16" type="date" value="12-02-2012">
+        <span class="add-on"><i class="icon-th"></i></span>
+      </div>
     </div>
   </nav>
 
-      <div align = center class="svg-container"></div>
+  <h2 align="center" id="graphtitle"></h2>
+
+  <div align = center class="svg-container"> </div>
 
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

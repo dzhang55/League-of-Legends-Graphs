@@ -3,7 +3,7 @@ var URL_START = "https://s3-us-west-1.amazonaws.com/riot-api/seed_data";
 var QUERY = "matches1.json";
 
 // diameter for the entire svg
-var diameter = 1000;
+var diameter = 800;
 
 // transition time in ms
 var time = 1000;
@@ -26,16 +26,21 @@ var championNames = [];
 var registeredUsers = [];
 var summoner = "";
 var currChampionId = 0;
+var currTeam = 0;
+var currLane = "";
+var currRole = ""
+var currSkillOrder = "All Skill Orders";
+
 
 // TO USE: booleans that each match must go through
-var filters = [];
+var itemFilters = [];
 
 // constructs an array of champion names with indices corresponding to champion ids
 // loads asynchonously because dropdown menu is dependent on it
 function loadChampionNames() {
-	d3.json("../json/champion.json", function(error, champions) {
+	d3.json("json/champion.json", function(error, champions) {
 
-		var menu = document.getElementById("dropdownlist");
+		var menu = document.getElementById("championdropdownlist");
  		for (var champion in champions.data) {
  		//	console.log(json.data[champion].key);
  		//	console.log(champion);
@@ -52,25 +57,48 @@ function loadChampionNames() {
 	});
 }
 
-// temporary for testing, adds filter for only riven games
+// deprecated, temporary for testing, adds filter for only riven games
 function onlyRiven() {
 	filters.push(function (match){
 		return match.player.championId == 92;
-	})
+	});
 }
 
 // true if in this match, the player plays the selected champion or if no champion is selected
-function filterByChampion(match, championId) {
-	if (championId == 0) {
+function filterByChampion(match) {
+	if (currChampionId == 0) {
 		return true;
 	} else {
-		return match.player.championId == championId;
+		return match.player.championId == currChampionId;
 	}
 
 }
 
 function filterByDate() {
 
+}
+
+function filterByItem() {
+
+}
+
+function filterByTeam(match) {
+	if (currTeam == 0) {
+		return true;
+	} else {
+		return match.player.teamId == currTeam;
+	}
+}
+
+function filterByRole(match) {
+	if (currRole == "" && currLane == "") {
+		return true;
+	} else {
+		if (match.player.timeline.role == "NONE" && currChampionId == 92) {
+			console.log(match.matchId);
+		}
+		return match.player.timeline.lane == currLane && match.player.timeline.role == currRole;
+	}
 }
 
 // passes a given match through all filter functions
@@ -92,6 +120,12 @@ function loadSummonerData(json) {
 	// change from hardcoding later
 	//d3.json("../json/dizzyyy30games.json", function(error, matches) {
 	d3.json(json, function(error, matches) {
+
+		if (error) {
+			d3.select("#graphtitle")
+				.html("User not registered");
+			return;
+		}
 		// array of all the objects for match data
 		for (var i = 0; i < matches.length; i++) {
 			
@@ -108,6 +142,14 @@ function loadSummonerData(json) {
 			// }
 
 			if (!filterByChampion(matches[i], currChampionId)) {
+				continue;
+			}
+
+			if (!filterByTeam(matches[i], currTeam)) {
+				continue;
+			}
+
+			if (!filterByRole(matches[i],currRole)) {
 				continue;
 			}
 
@@ -132,14 +174,19 @@ function loadSummonerData(json) {
 			}
 
 		dataset = dataset.filter(function (d) {
-			return d != undefined;
-		})
+			return d !== undefined;
+		});
 
 		console.log(sumDataset(dataset));
 
 		// if there is no data, create 404 teemo graph
 		if (dataset.length == 0) {
 			dataset.push({name : 17, value : 1, win : 404, total : 10000});
+			d3.select("#graphtitle")
+				.html("No Data for this selection");
+		} else {
+		d3.select("#graphtitle")
+			.html("Played against");
 		}
 
 
@@ -200,7 +247,7 @@ function updateExistingNodes(nodes) {
     	.transition()
 		.duration(time));
 
-    setHover(nodes.select(".hover"))
+    setHover(nodes.select(".hover"));
 }
 
 function addEnteringNodes(nodes) {
@@ -275,9 +322,9 @@ function setCircle(circle) {
 function setImage(image) {
 	// using attr instead of style allows d3 to transition properly
 	image.attr("style", function (d) {
-        	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px"
+        	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px";
     })
-        // must be transitioned in udpate but not append because the circles may change in size
+        // must be transitioned in update but not append because the circles may change in size
         .attr("x", function (d) {
 			return - 0.95 * d.r / Math.sqrt(2) + "px";
 		})
@@ -313,7 +360,7 @@ function setHover(hoverCircle) {
 		.attr("data-content", function (d) {
 			var winRate = 100 * d.win / d.total;
 			return "Won " + winRate.toFixed(2) + "% of " + d.total + " games";
-		})
+		});
 }
 
 // takes in a selection and applies a fade in transition to it
@@ -336,7 +383,7 @@ function sumDataset(dataset) {
 
 // uses the summoner name to load the corresponding json
 function loadUser(input) {
-	loadSummonerData("../json/" + input.toLowerCase() + ".json")
+	loadSummonerData("json/" + input.toLowerCase() + ".json");
 	console.log("user loaded");
 }
 
@@ -348,14 +395,14 @@ function clearData() {
 
 // not in use yet, loads the list of registered users
 function loadRegisteredUsers() {
-	d3.json("../json/summoners.json", function(error, users) {
+	d3.json("json/summoners.json", function(error, users) {
 		registeredUsers = users;
-	})
+	});
 }
 
 // change button name to selected champion
-function adjustButton(championName) {
-	var button = $("#dropdownmenu1");
+function adjustButton(buttonId, championName) {
+	var button = $(buttonId);
 	var children = button.children();
 	button.html(championName + " ");
 	button.append(children);
@@ -378,23 +425,68 @@ $("#summoner").submit(function() {
 });
 
 // on click of a menu item, filter the matches by champion and reload graph
-$("#dropdownlist").on("click", "a", function() {
-	var championName = $(this).html();
-	console.log(championName);
+$("#championdropdownlist").on("click", "a", function() {
+	var championSelection = $(this).html();
+	console.log(championSelection);
 	//console.log($("#dropdownmenu1"));
-	adjustButton(championName);
+	adjustButton("#championdropdownmenu", championSelection);
 	//filterByChampion(championName);
-	if (championName == "All Champions") {
+	if (championSelection == "All Champions") {
 		currChampionId = 0;
 	} else {
-		currChampionId = championNames.indexOf(championName);
+		currChampionId = championNames.indexOf(championSelection);
 	}
 	console.log(currChampionId);
-	loadUser(summoner)
+	loadUser(summoner);
 });
-console.log("a function loaded");
 
-$(".svg-container").popover({placement : "top", viewport : ".svg-container"});
+$("#teamdropdownlist").on("click", "a", function() {
+	var teamSelection = $(this).html();
+	adjustButton("#teamdropdownmenu", teamSelection);
+	if (teamSelection == "All Teams") {
+		currTeam = 0;
+	} else if (teamSelection == "Blue Team") {
+		console.log("blue team");
+		currTeam = 100;
+	} else if (teamSelection == "Red Team") {
+		currTeam = 200;
+	}
+	console.log(currTeam);
+	loadUser(summoner);
+});
+
+$("#roledropdownlist").on("click", "a", function() {
+	var roleSelection = $(this).html();
+	adjustButton("#roledropdownmenu", roleSelection);
+
+	switch (roleSelection) {
+		case "All Roles":
+			currLane = "";
+			currRole = ""; 
+			break;
+		case "Top":
+			currLane = "TOP";
+			currRole = "SOLO";
+			break;
+		case "Mid":
+			currLane = "MIDDLE";
+			currRole = "SOLO";
+			break;
+		case "Marksman":
+			currLane = "BOTTOM";
+			currRole = "DUO_CARRY";
+			break;
+		case "Support":
+			currLane = "BOTTOM";
+			currRole = "DUO_SUPPORT";
+			break;
+		case "Jungle":
+			currLane = "JUNGLE";
+			currRole = "NONE";
+	}
+	console.log(currLane + " " + currRole);
+	loadUser(summoner);
+});
 
 //$('.dropdown-toggle').dropdown()
 

@@ -5,7 +5,7 @@ import time
 
 API_key = key.getAPIkey()
 #registered_users = {'boxbox': 245353, 'laughinggorz': 21823701, 'wingsofdeathx': 19660288, 'nightblue3': 25850956}
-registered_users = {'dizzyyy': 23109706, 'laughinggorz': 21823701, 'boxbox': 245353}
+registered_users = {'dizzyyy': 23109706, 'laughinggorz': 21823701, 'boxbox': 245353, 'wingsofdeathx': 19660288}
 #returns the array of matches for a given summoner in JSON format
 def load_database(summoner_name, summoner_id): 
 	with open('json/' + summoner_name + '.json', 'a+') as f:
