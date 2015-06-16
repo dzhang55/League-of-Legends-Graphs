@@ -2,10 +2,16 @@ import json, requests
 import key
 import sys
 import time
+from pymongo import MongoClient
 
 API_key = key.getAPIkey()
 #registered_users = {'boxbox': 245353, 'laughinggorz': 21823701, 'wingsofdeathx': 19660288, 'nightblue3': 25850956}
-registered_users = {'dizzyyy': 23109706, 'laughinggorz': 21823701, 'boxbox': 245353, 'wingsofdeathx': 19660288, 'chiefpotato': 22646717}
+registered_users = {'dizzyyy': 23109706}
+
+client = MongoClient()
+db = client.database
+
+
 #returns the array of matches for a given summoner in JSON format
 def load_database(summoner_name, summoner_id): 
 	with open('json/' + summoner_name + '.json', 'a+') as f:
@@ -47,27 +53,25 @@ def load_match_history(summoner_id):
 		matches_json = r.json()
 		if 'matches' not in matches_json:
 			break;
-		new_matches = r.json()['matches']
 		time.sleep(1)
+		new_matches = r.json()['matches']
 
-		done_loading = add_current_matches(new_matches)
+		done_loading = add_current_matches(summoner_id, new_matches)
 		index += 15
 
-def add_current_matches(new_matches):
+def add_current_matches(summoner_id, new_matches):
 	for match in reversed(new_matches):
-			#print match['matchId']
-			#if matches is empty or this match is not the first of the list, then the match has not been added yet
-			if not matches or match['matchId'] != matches[0]['matchId']:
-				player = match['participants'][0]
-				match_details = get_other_participants(player['championId'], match['matchId'])
-				match_details['player'] = player
-				matches.append(match_details)
-				print "match added"
-				print match_details['matchId']
-				time.sleep(1)
-			else:
-				print "match already exists"
-				return True
+		player = match['participants'][0]
+		match_details = get_other_participants(player['championId'], match['matchId'])
+		match_details['player'] = player
+		write_result = db[str(summoner_id)].update({'matchId' : match_details['matchId']}, {'$setOnInsert' : match_details}, upsert = True)
+		print write_result
+		if write_result['updatedExisting'] == True:
+			print "match already exists"
+			return True
+		print "match added"
+		print match_details['matchId']
+		time.sleep(1)
 
 
 def match_history_query(summoner_id, index):
@@ -105,11 +109,12 @@ def write(summoner_name, original_num_matches):
 	with open('json/' + summoner_name + '.json', 'w') as fp:
    		json.dump(matches, fp)
 
+
+
 # iterate through the list of summoner name and id pairs
 for summoner_name, summoner_id in registered_users.items():
-	matches = load_database(summoner_name, summoner_id)
-	original_num_matches = len(matches)
-	print original_num_matches
+	#matches = load_database(summoner_name, summoner_id)
+	print db[str(summoner_id)].count()
 	print summoner_name + ": "
 	load_match_history(summoner_id)
-	write(summoner_name, original_num_matches)
+	print db[str(summoner_id)].count()
