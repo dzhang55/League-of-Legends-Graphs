@@ -30,6 +30,7 @@ var currTeam = 0;
 var currLane = "";
 var currRole = ""
 var currSkillOrder = "All Skill Orders";
+var currSeason = "";
 
 
 // TO USE: booleans that each match must go through
@@ -94,10 +95,15 @@ function filterByRole(match) {
 	if (currRole == "" && currLane == "") {
 		return true;
 	} else {
-		if (match.player.timeline.role == "NONE" && currChampionId == 92) {
-			console.log(match.matchId);
-		}
 		return match.player.timeline.lane == currLane && match.player.timeline.role == currRole;
+	}
+}
+
+function filterBySeason(match) {
+	if (currSeason == "") {
+		return true;
+	} else {
+		return match.season == currSeason;
 	}
 }
 
@@ -124,6 +130,8 @@ function loadSummonerData(json) {
 		if (error) {
 			d3.select("#graphtitle")
 				.html("User not registered");
+			//TO DO: notify server to register this user?
+			// use AJAX to start python register script and then return 
 			return;
 		}
 		// array of all the objects for match data
@@ -131,47 +139,39 @@ function loadSummonerData(json) {
 			
 			var team = matches[i].player.teamId;
 
-			// fellowPlayers if using games.json, participants if using .json
 			var participants = matches[i].participants;
 			var win = matches[i].player.stats.winner;
 
-			//SKIP CERTAIN MATCHES THAT CAN BE ADJUSTED FOR ITEM, CHAMPION, MATCH LENGTH, ETC
-			// if (!validMatch(matches[i])) {
-			// 	console.log("filtered out match");
-			// 	continue;
-			// }
-
-			if (!filterByChampion(matches[i], currChampionId)) {
+			// skip matches that don't match the settings
+			if (!filterByChampion(matches[i])) {
 				continue;
 			}
-
-			if (!filterByTeam(matches[i], currTeam)) {
+			if (!filterByTeam(matches[i])) {
 				continue;
 			}
-
-			if (!filterByRole(matches[i],currRole)) {
+			if (!filterByRole(matches[i])) {
+				continue;
+			}
+			if (!filterBySeason(matches[i])) {
 				continue;
 			}
 
 			for (var j = 0; j < participants.length; j++) {
-				if (participants[j].teamId != team) {
-					var champion = participants[j].championId;
-
-					if (champion in dataset) {
-						dataset[champion].value++;
-					} else {
-						dataset[champion] = {name : champion, value : 1, win : 0, total : 0};
-					} 
-					if (win) {
-						dataset[champion].win++;
-					}
-					dataset[champion].total++;
-					}
+				if (participants[j].teamId == team) {
+					continue;
 				}
-				//	dataset[summoner].win++;
-				//}
-				//dataset[summoner].total++;
+				var champion = participants[j].championId;
+
+				if (champion in dataset) {
+					dataset[champion].value++;
+				} else {
+					dataset[champion] = {name : champion, value : 1, win : 0};
+				} 
+				if (win) {
+					dataset[champion].win++;
+				}
 			}
+		}
 
 		dataset = dataset.filter(function (d) {
 			return d !== undefined;
@@ -181,14 +181,13 @@ function loadSummonerData(json) {
 
 		// if there is no data, create 404 teemo graph
 		if (dataset.length == 0) {
-			dataset.push({name : 17, value : 1, win : 404, total : 10000});
+			dataset.push({name : 17, value : 100, win : 404});
 			d3.select("#graphtitle")
 				.html("No Data for this selection");
 		} else {
 		d3.select("#graphtitle")
 			.html("Played against");
 		}
-
 
 		visualizeData({"children" : dataset});
 	});
@@ -297,8 +296,8 @@ function addEnteringNodes(nodes) {
 			return championNames[d.name];
 		})
 		.attr("data-content", function (d) {
-			var winRate = 100 * d.win / d.total;
-			return "Won " + winRate.toFixed(2) + "% of " + d.total + " games";
+			var winRate = 100 * d.win / d.value;
+			return "Won " + winRate.toFixed(2) + "% of " + d.value + " games";
 		})
 		.on("mouseover", function (d) {
 			d3.select(this)
@@ -337,7 +336,7 @@ function setImage(image) {
 function setText(text) {
 	text.text(function (d) {
 		// displays winrate with precision depending on the size of the bubble
-		var winRate = 100 * d.win / d.total;
+		var winRate = 100 * d.win / d.value;
 		if (d.r > 35) {
 			return winRate.toFixed(2) + '%';
 		} else if (d.r > 20) {
@@ -358,8 +357,8 @@ function setHover(hoverCircle) {
 			return d.r;
 		})
 		.attr("data-content", function (d) {
-			var winRate = 100 * d.win / d.total;
-			return "Won " + winRate.toFixed(2) + "% of " + d.total + " games";
+			var winRate = 100 * d.win / d.value;
+			return "Won " + winRate.toFixed(2) + "% of " + d.value + " games";
 		});
 }
 
@@ -443,13 +442,15 @@ $("#championdropdownlist").on("click", "a", function() {
 $("#teamdropdownlist").on("click", "a", function() {
 	var teamSelection = $(this).html();
 	adjustButton("#teamdropdownmenu", teamSelection);
-	if (teamSelection == "All Teams") {
-		currTeam = 0;
-	} else if (teamSelection == "Blue Team") {
-		console.log("blue team");
-		currTeam = 100;
-	} else if (teamSelection == "Red Team") {
-		currTeam = 200;
+	switch (teamSelection) {
+		case "All Teams":
+			currTeam = 0;
+			break;
+		case "Blue Team":
+			currTeam = 100;
+			break;
+		case "Red Team":
+			currTeam = 200;
 	}
 	console.log(currTeam);
 	loadUser(summoner);
@@ -485,6 +486,28 @@ $("#roledropdownlist").on("click", "a", function() {
 			currRole = "NONE";
 	}
 	console.log(currLane + " " + currRole);
+	loadUser(summoner);
+});
+
+$("#seasondropdownlist").on("click", "a", function() {
+	var seasonSelection = $(this).html();
+	adjustButton("#seasondropdownmenu", seasonSelection);
+
+	switch (seasonSelection) {
+		case "All Seasons":
+			currSeason = "";
+			break;
+		case "Season 4":
+			currSeason = "SEASON2014";
+			break;
+		case "Pre-Season 5":
+			currSeason = "PRESEASON2015";
+			break;
+		case "Season 5":
+			currSeason = "SEASON2015";
+			break;
+	}
+	console.log(currSeason);
 	loadUser(summoner);
 });
 

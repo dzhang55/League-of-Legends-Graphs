@@ -36,7 +36,8 @@ def update_registered_users(summoner_name, summoner_id):
 #returns true if there are no changes
 def load_match_history(summoner_id):
 	index = 0
-	while not True: 
+	done_loading = False
+	while not done_loading: 
 		try:
 			r = requests.get(match_history_query(summoner_id, index))
 		except requests.exceptions.HTTPError as e:
@@ -45,11 +46,11 @@ def load_match_history(summoner_id):
 			r = requests.get(match_history_query(summoner_id, index))
 		matches_json = r.json()
 		if 'matches' not in matches_json:
-			break
+			break;
 		new_matches = r.json()['matches']
 		time.sleep(1)
 
-		add_current_matches(new_matches)
+		done_loading = add_current_matches(new_matches)
 		index += 15
 
 def add_current_matches(new_matches):
@@ -66,6 +67,8 @@ def add_current_matches(new_matches):
 				time.sleep(1)
 			else:
 				print "match already exists"
+				return True
+
 
 def match_history_query(summoner_id, index):
 	return "https://na.api.pvp.net/api/lol/na/v2.2/matchhistory/" + str(summoner_id) + "?&beginIndex=" + str(index) + "&api_key=" + API_key
