@@ -11,18 +11,6 @@ registered_users = {'dizzyyy': 23109706}
 client = MongoClient()
 db = client.database
 
-
-#returns the array of matches for a given summoner in JSON format
-def load_database(summoner_name, summoner_id): 
-	with open('json/' + summoner_name + '.json', 'a+') as f:
-		# if no file exists, create a json file with an empty array for matches and update the registered users list
-		if f.tell() == 0:
-			f.write('[]')
-			#updateRegisteredUsers(summoner_name, summoner_id)
-		f.seek(0)
-		return json.load(f)
-	#print matches
-
 def load_registered_users():
 	with open('json/summoners.json', 'r') as f:
 		if f.tell() == 0:
@@ -101,19 +89,8 @@ def get_other_participants(champion_id, match_id):
 		get_other_participants(match_id)
 
 
-#writes the new updated array to file	
-def write(summoner_name, original_num_matches):
-	print len(matches)
-	if original_num_matches == len(matches):
-		return
-	with open('json/' + summoner_name + '.json', 'w') as fp:
-   		json.dump(matches, fp)
-
-
-
 # iterate through the list of summoner name and id pairs
 for summoner_name, summoner_id in registered_users.items():
-	#matches = load_database(summoner_name, summoner_id)
 	print db[str(summoner_id)].count()
 	print summoner_name + ": "
 	load_match_history(summoner_id)
