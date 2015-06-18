@@ -1,7 +1,3 @@
-// to query the seed data
-var URL_START = "https://s3-us-west-1.amazonaws.com/riot-api/seed_data";
-var QUERY = "matches1.json";
-
 // diameter for the entire svg
 var diameter = 800;
 
@@ -29,6 +25,7 @@ var currLane = "";
 var currRole = ""
 var currSkillOrder = "All Skill Orders";
 var currSeason = "";
+var matches = [];
 
 // constructs an array of champion names with indices corresponding to champion ids
 // loads asynchonously because dropdown menu is dependent on it
@@ -78,19 +75,19 @@ function filterByTeam(match) {
 	}
 }
 
-function filterByRole(match) {
-	if (currRole == "" && currLane == "") {
-		return true;
-	} else {
-		return match.player.timeline.lane == currLane && match.player.timeline.role == currRole;
-	}
-}
-
 function filterBySeason(match) {
 	if (currSeason == "") {
 		return true;
 	} else {
 		return match.season == currSeason;
+	}
+}
+
+function filterByRole(match) {
+	if (currRole == "" && currLane == "") {
+		return true;
+	} else {
+		return match.player.timeline.lane == currLane && match.player.timeline.role == currRole;
 	}
 }
 
@@ -147,11 +144,9 @@ function loadSummonerData(matches) {
 		// if there is no data, create 404 teemo graph
 		if (dataset.length == 0) {
 			dataset.push({name : 17, value : 100, win : 404});
-			d3.select("#graphtitle")
-				.html("No Data for this selection");
+			$("#graphtitle").html("No data for this selection");
 		} else {
-		d3.select("#graphtitle")
-			.html("Played against");
+			$("#graphtitle").html("Played against");
 		}
 
 		visualizeData({"children" : dataset});
@@ -371,11 +366,29 @@ function adjustButton(buttonId, championName) {
 	button.append(children);
 
 }
-console.time("test"); 
- // log start timestamp
+
+function addRegisterButton(summonerId) {
+	var register= $('<input class="btn btn-default" type="button" id="registerbutton" value="Click to register summoner"/>');
+	$(".svg-container").prepend(register);
+	register.on("click", function() {
+		$.ajax({
+			url: "/register",
+			data: {id: summonerId},
+			type: "POST",
+			success: function(response) {
+				$("#graphtitle").html("Registering summoner! Search again in a few minutes");
+				register.remove();
+			},
+			error: function(error) {
+				$("#graphtitle").html(error.responseText);
+			}
+		});
+		return false;
+	});
+}
+
 loadChampionNames();
-console.log("time to load champ names");
-console.timeEnd("test"); 
+
 // on submission of search, load the graph for a given user
 $("#summoner").submit(function() {
 	console.log("SUBMITTED");
@@ -383,15 +396,26 @@ $("#summoner").submit(function() {
         url: "/search",
         data: {name: $("input").val()},
         type: "POST",
-        dataType: 'json',
+        dataType: "json",
         success: function(response) {
-        	console.time("loaddata")
-            loadSummonerData(response);
+        	console.time("loaddata");
+        	matches = response;
+            loadSummonerData(matches);
             console.timeEnd("loaddata");
         },
         error: function(error) {
         	console.log("ERROR");
-            console.log(error);
+        	console.log(error);
+			$("#graphtitle").html(error.responseText.substring(0, 23));
+			matches = [];
+			removeExitingNodes(d3.selectAll(".node"));
+			if (error.responseText.lastIndexOf("Summoner not registered", 0) == 0) {
+				summonerId = error.responseText.substring(23);
+				console.log(summonerId);
+				addRegisterButton(summonerId);
+			}
+
+            
         }
     });
     return false;
@@ -484,20 +508,3 @@ $("#seasondropdownlist").on("click", "a", function() {
 	console.log(currSeason);
 	loadSummonerData(matches);
 });
-
-//$('.dropdown-toggle').dropdown()
-
-// var datepicker = $('.datepicker').datepicker();
-// datepicker.on('show', function() {
-// 	console.log("hi");
-// 	});
-// datepicker.on('changeDate', function(e) {
-// 	datepicker.datepicker('hide');
-// 	 console.log($('#date').input);
-// 	//datepicker.datepicker('setValue', value)
-// 	});
-//registeredUsers = loadRegisteredUsers();
-//onlyRiven();
-//loadSummonerData();
-
-console.timeEnd("test");

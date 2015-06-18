@@ -3,6 +3,9 @@ from flask import Flask, request, render_template
 from pymongo import MongoClient
 from bson import json_util
 import key
+import update
+from threading import Thread
+import time
 
 app = Flask(__name__)
 
@@ -12,34 +15,62 @@ API_key = key.getAPIkey()
 
 @app.route('/')
 def homepage():
-    print "homepage!"
+    print 'homepage!'
     return render_template('index.html')
 
 @app.route('/search', methods=['POST'])
 def search():
-    print "posted to search!"
+    print 'posted to search!'
     summoner_name = request.form['name']
     try:
-        r = requests.get("https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/"
-                      + summoner_name +  "?api_key=" + API_key)
-        print "query made"
-    except requests.exceptions.HTTPError as e:
-		return render_template('index.html', message = "User not found")
+        r = requests.get('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/'
+                      + summoner_name +  '?api_key=' + API_key)
+        json = r.json()
+        print 'query made'
+    except ValueError:
+        return 'Summoner not found'
 
-    #TO DO: deal with multiple summoners
+    #TO DO: is there a case with multiple summoners?
+
     #should only have one key so this loop executes once
-    #this is done to access the ke
-    json = r.json()
+    #this is done to access the key
     for summoner in json:
         id = str(json[summoner]['id'])
-        print id
-    if id in db.collection_names():
-        print "found database"
-        return json_util.dumps(db[id].find())
-    else:
-        print "no database for some reason"
-        return render_template('index.html', message = "User not registered")
+    print id
+    print db.collection_names()
 
+    if id in db.collection_names():
+        data = db[id].find({}, {
+            '_id': 0,
+            'season': 1,
+            'player.championId': 1,
+            'player.teamId': 1,
+            'player.timeline.lane': 1,
+            'player.timeline.role': 1,
+            'player.stats.winner': 1,
+            'participants.championId': 1,
+            'participants.teamId': 1})
+        return json_util.dumps(data)
+    else:
+        print 'no database for some reason'
+        return 'Summoner not registered' + id
+
+@app.route('/register', methods=['POST'])
+def register():
+    print 'posted to register'
+    summoner_id = request.form['id']
+    print summoner_id
+    update_thread = Thread(target=update.load_match_history, args=[summoner_id])
+    update_thread.start()
+    return "registered!"
+
+def background_update():
+    while True:
+        update.main()
+        time.sleep(86400)
 
 if __name__ == '__main__':
+    background_thread = Thread(target=background_update)
+    background_thread.daemon = True
+    background_thread.start()
     app.run()

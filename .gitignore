@@ -1,3 +1,4 @@
+*.pyc
 /key.py
 /key.pyc
 .DS_Store
