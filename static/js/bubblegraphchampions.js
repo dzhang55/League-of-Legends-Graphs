@@ -270,6 +270,7 @@ function addEnteringNodes(nodes) {
 	$(".hover").popover({trigger: "hover", container: "body", placement: "auto top"});
 }
 
+// sets the attrs updated for existing and entering nodes
 function setCircle(circle) {
 	circle.attr("r", function (d) {
 			return d.r;
@@ -339,25 +340,6 @@ function sumDataset(dataset) {
 	return sum;
 }
 
-// uses the summoner name to load the corresponding json
-function loadUser(input) {
-	loadSummonerData("json/" + input.toLowerCase() + ".json");
-	console.log("user loaded");
-}
-
-// not in use, clears graph
-function clearData() {
-	console.log("cleared");
-	d3.svg.selectAll(".node").remove();
-}
-
-// not in use yet, loads the list of registered users
-function loadRegisteredUsers() {
-	d3.json("json/summoners.json", function(error, users) {
-		registeredUsers = users;
-	});
-}
-
 // change button name to selected champion
 function adjustButton(buttonId, championName) {
 	var button = $(buttonId);
@@ -381,6 +363,7 @@ function addRegisterButton(summonerId) {
 			},
 			error: function(error) {
 				$("#graphtitle").html(error.responseText);
+				register.remove();
 			}
 		});
 		return false;
@@ -404,12 +387,14 @@ $("#summoner").submit(function() {
             console.timeEnd("loaddata");
         },
         error: function(error) {
+        	// displays Summoner not registered and passes id to register button
         	console.log("ERROR");
         	console.log(error);
-			$("#graphtitle").html(error.responseText.substring(0, 23));
+        	message = error.responseText.substring(0, 23);
+			$("#graphtitle").html(message);
 			matches = [];
 			removeExitingNodes(d3.selectAll(".node"));
-			if (error.responseText.lastIndexOf("Summoner not registered", 0) == 0) {
+			if (message == "Summoner not registered") {
 				summonerId = error.responseText.substring(23);
 				console.log(summonerId);
 				addRegisterButton(summonerId);

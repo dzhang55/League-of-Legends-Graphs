@@ -26,7 +26,13 @@ def search():
         r = requests.get('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/'
                       + summoner_name +  '?api_key=' + API_key)
         json = r.json()
-        print 'query made'
+
+        # repeat if rate limit exceeded
+        if 'status' in json:
+            print json['status']['message']
+            time.sleep(2)
+            r = requests.get('https://na.api.pvp.net/api/lol/na/v2.2/match/' + str(match_id) +  '?api_key=' + API_key)
+            json = r.json()
     except ValueError:
         return 'Summoner not found'
 
@@ -39,6 +45,7 @@ def search():
     print id
     print db.collection_names()
 
+    # return all matches
     if id in db.collection_names():
         data = db[id].find({}, {
             '_id': 0,
@@ -52,7 +59,6 @@ def search():
             'participants.teamId': 1})
         return json_util.dumps(data)
     else:
-        print 'no database for some reason'
         return 'Summoner not registered' + id
 
 @app.route('/register', methods=['POST'])
@@ -60,6 +66,7 @@ def register():
     print 'posted to register'
     summoner_id = request.form['id']
     print summoner_id
+    #start thread in order to respond to client while registering user
     update_thread = Thread(target=update.load_match_history, args=[summoner_id])
     update_thread.start()
     return "registered!"
@@ -70,6 +77,7 @@ def background_update():
         time.sleep(86400)
 
 if __name__ == '__main__':
+    #create daemon to update matches in the background every 24 hours
     background_thread = Thread(target=background_update)
     background_thread.daemon = True
     background_thread.start()
