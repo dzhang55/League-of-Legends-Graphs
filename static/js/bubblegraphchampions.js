@@ -351,7 +351,12 @@ function adjustButton(buttonId, championName) {
 }
 
 function addRegisterButton(summonerId) {
-	var register= $('<input class="btn btn-default" style=float:middle type="button" id="registerbutton" value="Click to register summoner"/>');
+	var register= $('<input class="btn btn-default" align="center" type="button" id="registerbutton" value="Click to register summoner"/>');
+	register.css("width", 195);
+	register.css("position", "absolute");
+	register.css("left", "0");
+	register.css("right", "0");
+	register.css("margin", "auto");
 	$(".svg-container").prepend(register);
 	register.on("click", function() {
 		$.ajax({
