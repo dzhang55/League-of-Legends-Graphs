@@ -47,16 +47,7 @@ def search():
 
     # return all matches
     if id in db.collection_names():
-        data = db[id].find({}, {
-            '_id': 0,
-            'season': 1,
-            'player.championId': 1,
-            'player.teamId': 1,
-            'player.timeline.lane': 1,
-            'player.timeline.role': 1,
-            'player.stats.winner': 1,
-            'participants.championId': 1,
-            'participants.teamId': 1})
+        data = db[id].find({}, {'_id': 0})
         return json_util.dumps(data)
     else:
         return 'Summoner not registered' + id

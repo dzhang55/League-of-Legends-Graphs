@@ -87,7 +87,8 @@ function filterByRole(match) {
 	if (currRole == "" && currLane == "") {
 		return true;
 	} else {
-		return match.player.timeline.lane == currLane && match.player.timeline.role == currRole;
+		console.log(match.player.lane);
+		return match.player.lane == currLane && match.player.role == currRole;
 	}
 }
 
@@ -102,7 +103,7 @@ function loadSummonerData(matches) {
 			var team = matches[i].player.teamId;
 
 			var participants = matches[i].participants;
-			var win = matches[i].player.stats.winner;
+			var win = matches[i].player.winner;
 
 			// skip matches that don't match the settings
 			if (!filterByChampion(matches[i])) {
@@ -350,7 +351,7 @@ function adjustButton(buttonId, championName) {
 }
 
 function addRegisterButton(summonerId) {
-	var register= $('<input class="btn btn-default" type="button" id="registerbutton" value="Click to register summoner"/>');
+	var register= $('<input class="btn btn-default" style=float:middle type="button" id="registerbutton" value="Click to register summoner"/>');
 	$(".svg-container").prepend(register);
 	register.on("click", function() {
 		$.ajax({
