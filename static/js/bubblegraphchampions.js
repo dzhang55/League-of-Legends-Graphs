@@ -281,9 +281,12 @@ function setCircle(circle) {
 // sets the attrs updated for existing and entering nodes
 function setImage(image) {
 	// using attr instead of style allows d3 to transition properly
-	image.attr("style", function (d) {
-        	return "height : " + 0.95 * Math.sqrt(2) * d.r + "px; width : " + 0.95 * Math.sqrt(2) * d.r + "px";
-    })
+	image.attr("height", function (d) {
+			return 0.95 * Math.sqrt(2) * d.r;
+		})
+		.attr("width", function (d) { 
+			return 0.95 * Math.sqrt(2) * d.r;
+		})
         // must be transitioned in update but not append because the circles may change in size
         .attr("x", function (d) {
 			return - 0.95 * d.r / Math.sqrt(2) + "px";
@@ -351,13 +354,15 @@ function adjustButton(buttonId, championName) {
 }
 
 function addRegisterButton(summonerId) {
-	var register= $('<input class="btn btn-default" align="center" type="button" id="registerbutton" value="Click to register summoner"/>');
+	// create register button centered in svg container
+	var register= $('<input id="register" class="btn btn-default" align="center" type="button" value="Click to register summoner"/>');
 	register.css("width", 195);
 	register.css("position", "absolute");
 	register.css("left", "0");
 	register.css("right", "0");
 	register.css("margin", "auto");
 	$(".svg-container").prepend(register);
+
 	register.on("click", function() {
 		$.ajax({
 			url: "/register",
@@ -380,6 +385,11 @@ loadChampionNames();
 
 // on submission of search, load the graph for a given user
 $("#summoner").submit(function() {
+	// remove register button if it exists
+	console.log($("#register").length);
+	if ($("#register").length) {
+		$("#register").remove();
+	}
 	console.log("SUBMITTED");
 	$.ajax({
         url: "/search",
