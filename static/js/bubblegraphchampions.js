@@ -87,7 +87,6 @@ function filterByRole(match) {
 	if (currRole == "" && currLane == "") {
 		return true;
 	} else {
-		console.log(match.player.lane);
 		return match.player.lane == currLane && match.player.role == currRole;
 	}
 }
