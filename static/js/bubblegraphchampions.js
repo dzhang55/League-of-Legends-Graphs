@@ -1,5 +1,5 @@
 // diameter for the entire svg
-var diameter = $(".siv-container").width();
+var diameter = $(".svg-container").width();
 
 // transition time in ms
 var time = 1000;
