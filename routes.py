@@ -62,14 +62,5 @@ def register():
     update_thread.start()
     return "registered!"
 
-def background_update():
-    while True:
-        update.main()
-        time.sleep(86400)
-
-if __name__ == '__main__':
-    #create daemon to update matches in the background every 24 hours
-    background_thread = Thread(target=background_update)
-    background_thread.daemon = True
-    background_thread.start()
+if __name__ == "__main__":
     app.run()

@@ -1,6 +1,7 @@
 import json, requests
 import key
 import time
+import sys
 from pymongo import MongoClient
 
 API_key = key.getAPIkey()
@@ -108,16 +109,16 @@ def get_other_participants(champion_id, match_id):
         print e.message
         print match_id
 
-def main():
 
+if __name__ == '__main__':
+    if len(sys.argv) == 2:
+        args = sys.argv[1]
+        if args == "hard":
+            hard_update = True
     for collection in db.collection_names(include_system_collections = False):
         print db[collection].count()
         print collection + ': '
         load_match_history(collection)
         print db[collection].count()
 
-# iterate through the list of summoner name and id pairs
-if __name__ == '__main__':
-    hard_update = True
-    main()
 
