@@ -119,7 +119,6 @@ if __name__ == '__main__':
         if args == "soft":
             soft_update = True
     for collection in db.collection_names(include_system_collections = False):
-        db[collection].remove()
         done_loading = False
         print db[collection].count()
         print collection + ': '
