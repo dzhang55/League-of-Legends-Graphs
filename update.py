@@ -3,19 +3,17 @@ import key
 import time
 import sys
 from pymongo import MongoClient
+from threading import Thread
 
 API_key = key.getAPIkey()
 client = MongoClient()
 db = client.database
-hard_update = False
+soft_update = False
+done_loading = False
 
-#gets a new array of matches without other participants from the Riot API and appends any new ones to the current array
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
-#returns true if there are no changes
 def load_match_history(summoner_id):
-    start = time.time()
     index = 0
-    done_loading = False
     while not done_loading:
         try:
             r = requests.get(match_history_query(summoner_id, index))
@@ -31,33 +29,42 @@ def load_match_history(summoner_id):
             print e.message
             time.sleep(2)
             continue
+        except requests.exceptions.ValueError as e:
+            print e.message
 
         #empty json meaning all matches have been added
         if 'matches' not in matches_json:
             break
-        #time.sleep(1)
         new_matches = r.json()['matches']
-        done_loading = add_current_matches(summoner_id, new_matches)
+        add_current_matches(summoner_id, new_matches)
+        #time.sleep(0.1)
         index += 15
     print "done loading"
-    print "total: " + str(time.time() - start)
 
+#start threads for loading each match in the list of current matches
 def add_current_matches(summoner_id, new_matches):
     for match in reversed(new_matches):
-        player = match['participants'][0]
-        match_details = get_other_participants(player['championId'], match['matchId'])
-        match_details['player'] = player
-        match_summary = abbreviate_match(match_details)
-        write_result = db[str(summoner_id)].update({'_id' : match_details['matchId']}, {'$setOnInsert' : match_summary}, upsert = True)
+        match_thread = Thread(target=load_single_match, args=[summoner_id, match])
+        match_thread.start()
 
-        if write_result['updatedExisting'] == True:
-            print "match already exists"
-            if not hard_update:
-                return True
-        print "match added"
-        print match_details['matchId']
-    return False
+#writes a single match to the database
+def load_single_match(summoner_id, match):
+    global done_loading
+    player = match['participants'][0]
+    match_details = get_other_participants(player['championId'], match['matchId'])
+    match_details['player'] = player
+    match_summary = abbreviate_match(match_details)
+    write_result = db[str(summoner_id)].update({'_id' : match_details['matchId']}, {'$setOnInsert' : match_summary}, upsert = True)
+    
+    # if the match already exists and this is a soft update, this will stop loading matches
+    if write_result['updatedExisting'] == True:
+        print "match already exists"
+        if soft_update:
+            done_loading = True
+    print "match added"
+    print match_details['matchId']
 
+#retrieves relevant statistics from a match
 def abbreviate_match(match):
     print "abbreviated"
     match_summary = {}
@@ -76,8 +83,6 @@ def abbreviate_match(match):
              'teamId': participant['teamId']})
 
     return match_summary
-
-
 
 def match_history_query(summoner_id, index):
     return 'https://na.api.pvp.net/api/lol/na/v2.2/matchhistory/' + str(summoner_id) + '?&beginIndex=' + str(index) + '&api_key=' + API_key
@@ -103,7 +108,7 @@ def get_other_participants(champion_id, match_id):
         return match
     except requests.exceptions.HTTPError as e:
         print e.message
-    except requests.exceptions.ValueError as e:
+    except ValueError as e:
         print e.message
         print match_id
 
@@ -111,9 +116,11 @@ def get_other_participants(champion_id, match_id):
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         args = sys.argv[1]
-        if args == "hard":
-            hard_update = True
+        if args == "soft":
+            soft_update = True
     for collection in db.collection_names(include_system_collections = False):
+        db[collection].remove()
+        done_loading = False
         print db[collection].count()
         print collection + ': '
         load_match_history(collection)
