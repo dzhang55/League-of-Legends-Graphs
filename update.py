@@ -13,18 +13,18 @@ hard_update = False
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 #returns true if there are no changes
 def load_match_history(summoner_id):
+    start = time.time()
     index = 0
     done_loading = False
     while not done_loading:
         try:
             r = requests.get(match_history_query(summoner_id, index))
             matches_json = r.json()
-
-            while 'status' in matches_json:
+            if 'status' in matches_json:
                 print matches_json['status']['message']
                 print "during load match history"
                 time.sleep(2)
-                r = requests.get(match_history_query(summoner_id, index))
+                continue
 
         except requests.exceptions.HTTPError as e:
             print "error"
@@ -34,17 +34,16 @@ def load_match_history(summoner_id):
 
         #empty json meaning all matches have been added
         if 'matches' not in matches_json:
-            break;
-        time.sleep(1)
+            break
+        #time.sleep(1)
         new_matches = r.json()['matches']
-
         done_loading = add_current_matches(summoner_id, new_matches)
         index += 15
     print "done loading"
+    print "total: " + str(time.time() - start)
 
 def add_current_matches(summoner_id, new_matches):
     for match in reversed(new_matches):
-        time.sleep(1)
         player = match['participants'][0]
         match_details = get_other_participants(player['championId'], match['matchId'])
         match_details['player'] = player
@@ -88,7 +87,6 @@ def get_other_participants(champion_id, match_id):
     try:
         r = requests.get('https://na.api.pvp.net/api/lol/na/v2.2/match/' + str(match_id) +  '?api_key=' + API_key)
         match = r.json()
-
         while 'status' in match:
             print match['status']['message']
             print "during getting other participants"

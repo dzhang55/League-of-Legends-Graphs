@@ -23,12 +23,17 @@
     <form id="summoner">
       <div class="input-group input-group-lg">
         <input name="summoner" type="text" class="form-control" placeholder="Summoner Name" aria-describedby="basic-addon">
-        <span class="input-group-addon"><span class="glyphicon glyphicon-search" id="basic-addon"></span></span> 
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="submit">
+            <span class="glyphicon glyphicon-search" id="basic-addon"></span>
+          </button>
+        </span> 
       </div>
     </form>
 
   <nav class="navbar navbar-default">
     <div class="container-fluid">
+      <span class="navbar-brand">I played: </span>
       <div class="dropdown" style="float:right">
         <button class="btn btn-default dropdown-toggle" type="button" id="championdropdownmenu" data-toggle="dropdown" aria-expanded="true">
           All Champions
@@ -82,9 +87,14 @@
     </div>
   </nav>
 
+  <div id="instructions" class="alert alert-info alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <strong>Instructions: </strong>Please enter your summoner name to see your winrates against enemy champions! Adjust the settings above to filter matches based on what you played.
+</div>
+
   <h2 align="center" id="graphtitle"></h2>
 
-  <div style="width:100%" align="center" class="svg-container"> </div>
+  <div align="center" id="svg-container"></div>
 
 
   <footer>
@@ -99,5 +109,6 @@
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script src="/static/js/bubblegraphchampions.js" charset="utf-8"></script>
+    <script src="/static/js/buttons.js" charset="utf-8"></script>
   </body>
 </html>

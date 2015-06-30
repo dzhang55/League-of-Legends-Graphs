@@ -30,14 +30,16 @@ def search():
         # repeat if rate limit exceeded
         if 'status' in json:
             print json['status']['message']
-            time.sleep(2)
-            r = requests.get('https://na.api.pvp.net/api/lol/na/v2.2/match/' + str(match_id) +  '?api_key=' + API_key)
+            time.sleep(1)
+            r = requests.get('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/' + summoner_name +  '?api_key=' + API_key)
             json = r.json()
+            if 'status' in json:
+                print "second attempt failed"
+                return json['status']['message']
     except ValueError:
         return 'Summoner not found'
 
     #TO DO: is there a case with multiple summoners?
-
     #should only have one key so this loop executes once
     #this is done to access the key
     for summoner in json:
