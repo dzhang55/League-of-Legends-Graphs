@@ -116,7 +116,6 @@ function loadSummonerData(matches) {
 			if (!filterBySeason(matches[i])) {
 				continue;
 			}
-
 			for (var j = 0; j < participants.length; j++) {
 				if (participants[j].teamId == team) {
 					continue;

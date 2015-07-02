@@ -68,7 +68,8 @@ def load_single_match(summoner_id, match):
     if not hard_update and write_result['updatedExisting'] == True:
         print "match already exists"
         done_loading = True
-    print match_details['matchId']
+    else: 
+        print match_details['matchId']
 
 #retrieves relevant statistics from a match
 def abbreviate_match(match):
