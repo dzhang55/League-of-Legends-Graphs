@@ -49,6 +49,7 @@ def search():
 
     # return all matches
     if id in db.collection_names():
+        update.load_match_history(id)
         data = db[id].find({}, {'_id': 0})
         return json_util.dumps(data)
     else:
@@ -60,8 +61,8 @@ def register():
     summoner_id = request.form['id']
     print summoner_id
     #start thread in order to respond to client while registering user
-    update_thread = Thread(target=update.load_match_history, args=[summoner_id])
-    update_thread.start()
+    register_thread = Thread(target=update.load_match_history, args=[summoner_id])
+    register_thread.start()
     return "registered!"
 
 if __name__ == "__main__":

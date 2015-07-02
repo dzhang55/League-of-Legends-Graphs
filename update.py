@@ -8,11 +8,12 @@ from threading import Thread
 API_key = key.getAPIkey()
 client = MongoClient()
 db = client.database
-soft_update = False
+hard_update = False
 done_loading = False
 
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(summoner_id):
+    print hard_update
     index = 0
     while not done_loading:
         try:
@@ -36,10 +37,17 @@ def load_match_history(summoner_id):
         if 'matches' not in matches_json:
             break
         new_matches = r.json()['matches']
+        if up_to_date(summoner_id, new_matches[-1]['matchId']):
+            break
         add_current_matches(summoner_id, new_matches)
         #time.sleep(0.1)
         index += 15
     print "done loading"
+
+#checks if the most recent match is in the database
+#this stops the 15 request threads from loading
+def up_to_date(summoner_id, match_id):
+    return db[summoner_id].find({'_id': match_id}).count() == 1
 
 #start threads for loading each match in the list of current matches
 def add_current_matches(summoner_id, new_matches):
@@ -57,10 +65,9 @@ def load_single_match(summoner_id, match):
     write_result = db[str(summoner_id)].update({'_id' : match_details['matchId']}, {'$setOnInsert' : match_summary}, upsert = True)
     
     # if the match already exists and this is a soft update, this will stop loading matches
-    if write_result['updatedExisting'] == True:
+    if not hard_update and write_result['updatedExisting'] == True:
         print "match already exists"
-        if soft_update:
-            done_loading = True
+        done_loading = True
     print "match added"
     print match_details['matchId']
 
@@ -116,8 +123,8 @@ def get_other_participants(champion_id, match_id):
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         args = sys.argv[1]
-        if args == "soft":
-            soft_update = True
+        if args == "hard":
+            hard_update = True
     for collection in db.collection_names(include_system_collections = False):
         done_loading = False
         print db[collection].count()
