@@ -13,7 +13,6 @@ done_loading = False
 
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(summoner_id):
-    print hard_update
     index = 0
     while not done_loading:
         try:
@@ -30,19 +29,20 @@ def load_match_history(summoner_id):
             print e.message
             time.sleep(2)
             continue
-        except requests.exceptions.ValueError as e:
+        except ValueError as e:
             print e.message
 
         #empty json meaning all matches have been added
         if 'matches' not in matches_json:
             break
         new_matches = r.json()['matches']
-        if up_to_date(summoner_id, new_matches[-1]['matchId']):
+        if not hard_update and up_to_date(summoner_id, new_matches[-1]['matchId']):
+            print "up to date"
             break
         add_current_matches(summoner_id, new_matches)
-        #time.sleep(0.1)
+        time.sleep(0.1)
         index += 15
-    print "done loading"
+    print summoner_id + " is done loading"
 
 #checks if the most recent match is in the database
 #this stops the 15 request threads from loading
@@ -68,12 +68,10 @@ def load_single_match(summoner_id, match):
     if not hard_update and write_result['updatedExisting'] == True:
         print "match already exists"
         done_loading = True
-    print "match added"
     print match_details['matchId']
 
 #retrieves relevant statistics from a match
 def abbreviate_match(match):
-    print "abbreviated"
     match_summary = {}
     match_summary['season'] = match['season']
     match_summary['player'] = {}
@@ -125,6 +123,11 @@ if __name__ == '__main__':
         args = sys.argv[1]
         if args == "hard":
             hard_update = True
+        if args in db.collection_names():
+            hard_update = True
+            load_match_history(args)
+            sys.exit()
+            
     for collection in db.collection_names(include_system_collections = False):
         done_loading = False
         print db[collection].count()
