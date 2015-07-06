@@ -1,5 +1,5 @@
 
-// change button name to selection
+// change button name to selection, preserves other children like the arrow in dropdown menus
 function adjustButton(buttonId, selection) {
 	var button = $(buttonId);
 	var children = button.children();
@@ -56,6 +56,8 @@ $("#summoner").submit(function() {
         	console.time("loaddata");
         	matches = response;
             loadSummonerData(matches);
+            loadList(matches)
+            //
             console.timeEnd("loaddata");
         },
         error: function(error) {
@@ -166,4 +168,29 @@ $("#seasondropdownlist").on("click", "a", function() {
 	}
 	console.log(currSeason);
 	loadSummonerData(matches);
+});
+
+$("#list-selection").on("click", function() {
+	console.log("toggle selection");
+	var selection = $(this).html();
+	if (selection === "Winrate") {
+		$(this).html("Total");
+	} else if (selection === "Total") {
+		$(this).html("Winrate");
+	}
+	loadList();
+});
+
+
+$("#list-order").on("click", function() {
+	var order = $(this).html();
+	console.log(order);
+	if (order === "Ascending") {
+		console.log("change to descending");
+		$(this).html("Descending");
+	} else if (order === "Descending") {
+		console.log("change to ascending");
+		$(this).html("Ascending");
+	}
+	loadList();
 });

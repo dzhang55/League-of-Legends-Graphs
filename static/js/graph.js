@@ -9,7 +9,7 @@ var color = d3.scale.category20c();
 
 // uses d3 pack function which creates the bubble layout
 var bubbleLayout = d3.layout.pack()
-	.sort(d3.descending)
+	.sort(compareByTotalDescending)
 	.size([diameter, diameter])
 	.padding(5);
 
@@ -146,6 +146,7 @@ function loadSummonerData(matches) {
 		} else {
 			$("#graphtitle").html("Played against");
 		}
+		loadList(dataset);
 
 		visualizeData({"children" : dataset});
 }
@@ -339,4 +340,68 @@ function sumDataset(dataset) {
 		sum += dataset[i].value;
 	}
 	return sum;
+}
+
+function loadList() {
+	if (!$("#winratelist").length) {
+    	var list = $('<ul class="list-group" id="winratelist"> </ul>');
+    	list.css("overflow-y", "scroll");
+    	list.css("height", "80%");
+    	$("#list-container").append(list);
+    } else {
+    	var list = $("#winratelist");
+    	$("#winratelist .champion").remove();
+    }
+    var selection = $("#list-selection").html();
+    var order = $("#list-order").html();
+    var compare;
+    var val;
+    if (selection == "Winrate" && order == "Ascending") {
+    	compare = compareByWRAscending;
+    	val = getWR;
+    }
+    if (selection == "Winrate" && order == "Descending") {
+    	compare = compareByWRDescending;
+    	val = getWR;
+    }
+    if (selection == "Total" && order == "Ascending") {
+    	compare = compareByTotalAscending;
+    	val = getTotal;
+    }
+    if (selection == "Total" && order == "Descending") {
+    	compare = compareByTotalDescending;
+    	val = getTotal;
+    }
+    sorted = dataset.slice(0).sort(compare);
+    for (var i = 0; i < sorted.length; i++) {
+    	var item = $('<li class="champion list-group-item">' + championNames[sorted[i].name] + ' </li>');
+    	item.prepend($('<span class="badge">' + val(sorted[i]) + '</span>'));
+    	list.append(item);
+    }
+
+}
+
+function getWR(d) {
+	var winRate = 100 * d.win / d.value ;
+	return winRate.toFixed(2) + "%";
+}
+
+function getTotal(d) {
+	return d.value;
+}
+
+function compareByTotalDescending(a, b) {
+	return b.value - a.value;
+}
+
+function compareByTotalAscending(a, b) {
+	return a.value - b.value;
+}
+
+function compareByWRDescending(a, b) {
+	return b.win / b.value - a.win / a.value;
+}
+
+function compareByWRAscending(a, b) {
+	return a.win / a.value - b.win / b.value;
 }
