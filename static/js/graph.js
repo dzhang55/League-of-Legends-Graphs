@@ -343,15 +343,7 @@ function sumDataset(dataset) {
 }
 
 function loadList() {
-	if (!$("#winratelist").length) {
-    	var list = $('<ul class="list-group" id="winratelist"> </ul>');
-    	list.css("overflow-y", "scroll");
-    	list.css("height", "75%");
-    	$("#list-container").append(list);
-    } else {
-    	var list = $("#winratelist");
-    	$("#winratelist .champion").remove();
-    }
+    $("#winratelist").empty();
     var selection = $("#list-selection").html();
     var order = $("#list-order").html();
     var compare;
@@ -376,7 +368,7 @@ function loadList() {
     for (var i = 0; i < sorted.length; i++) {
     	var item = $('<li class="champion list-group-item">' + championNames[sorted[i].name] + ' </li>');
     	item.prepend($('<span class="badge">' + val(sorted[i]) + '</span>'));
-    	list.append(item);
+    	$("#winratelist").append(item);
     }
 
 }
