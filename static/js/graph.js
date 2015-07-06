@@ -366,8 +366,9 @@ function loadList() {
     }
     sorted = dataset.slice(0).sort(compare);
     for (var i = 0; i < sorted.length; i++) {
-    	var item = $('<li class="champion list-group-item">' + championNames[sorted[i].name] + ' </li>');
-    	item.prepend($('<span class="badge">' + val(sorted[i]) + '</span>'));
+    	var picture = "<img src=/static/images/champions/" + championNames[sorted[i].name] + ".png height=50px>";
+    	var item = $('<li class="champion list-group-item">' + picture + " " + championNames[sorted[i].name] + ' </li>');
+    	item.prepend($('<span class="badge badge-default">' + val(sorted[i]) + '</span>'));
     	$("#winratelist").append(item);
     }
 
