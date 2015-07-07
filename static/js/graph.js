@@ -1,6 +1,9 @@
 // diameter for the entire svg
 var diameter = $("#svg-container").width();
 
+// adjust list height to match graph
+$("#list-container").height(0.95 * diameter);
+
 // transition time in ms
 var time = 1000;
 
