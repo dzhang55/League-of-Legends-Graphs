@@ -22,16 +22,19 @@ def homepage():
 def search():
     print 'posted to search!'
     summoner_name = request.form['name']
+    region = request.form['region']
+    print region
     try:
-        r = requests.get('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/'
-                      + summoner_name +  '?api_key=' + API_key)
+        query_url = ('https://' + region + '.api.pvp.net/api/lol/' + region
+         + '/v1.4/summoner/by-name/' + summoner_name +  '?api_key=' + API_key)
+        r = requests.get(query_url)
         json = r.json()
 
         # repeat if rate limit exceeded
         if 'status' in json:
             print json['status']['message']
             time.sleep(1)
-            r = requests.get('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/' + summoner_name +  '?api_key=' + API_key)
+            r = requests.get(query_url)
             json = r.json()
             if 'status' in json:
                 print "second attempt failed"
@@ -45,12 +48,11 @@ def search():
     for summoner in json:
         id = str(json[summoner]['id'])
     print id
-    print db.collection_names()
 
     # return all matches
-    if id in db.collection_names():
-        update.load_match_history(id)
-        data = db[id].find({}, {'_id': 0})
+    if (region + id) in db.collection_names():
+        update.load_match_history(region, id)
+        data = db[region + id].find({}, {'_id': 0})
         return json_util.dumps(data)
     else:
         return 'Summoner not registered' + id
@@ -59,9 +61,10 @@ def search():
 def register():
     print 'posted to register'
     summoner_id = request.form['id']
+    region = request.form['region']
     print summoner_id
     #start thread in order to respond to client while registering user
-    register_thread = Thread(target=update.load_match_history, args=[summoner_id])
+    register_thread = Thread(target=update.load_match_history, args=[region, summoner_id])
     register_thread.start()
     return "registered!"
 

@@ -53,6 +53,24 @@
 
     <form id="summoner">
       <div class="input-group input-group-lg">
+        <span class="input-group-btn">
+          <button class="btn btn-default dropdown-toggle" type="button" id="regiondropdownmenu" data-toggle="dropdown" aria-expanded="true">
+            na
+            <span class="caret"></span>
+          </button>
+          <ul style="overflow-y:scroll;height:20vh" class="dropdown-menu" id="regiondropdownlist" role="menu">
+            <li><a role="menuitem" tabindex="-1" href='#'>br</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>eune</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>euw</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>kr</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>lan</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>las</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>na</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>oce</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>ru</a></li>
+            <li><a role="menuitem" tabindex="-1" href='#'>tr</a></li>
+          </ul>
+        </span>
         <input name="summoner" type="text" class="form-control" placeholder="Summoner Name" aria-describedby="basic-addon">
         <span class="input-group-btn">
           <button class="btn btn-inverse" type="submit">

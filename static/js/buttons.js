@@ -1,3 +1,4 @@
+regionSelection = "na";
 
 // change button name to selection, preserves other children like the arrow in dropdown menus
 function adjustButton(buttonId, selection) {
@@ -21,10 +22,10 @@ function addRegisterButton(summonerId) {
 	register.on("click", function() {
 		$.ajax({
 			url: "/register",
-			data: {id: summonerId},
+			data: {id: summonerId, region: regionSelection},
 			type: "POST",
 			success: function(response) {
-				$("#graphtitle").html("Registering summoner! Search again in a few minutes");
+				$("#graphtitle").html("Registering summoner - takes about a minute. Please search again!");
 				register.remove();
 			},
 			error: function(error) {
@@ -49,7 +50,7 @@ $("#summoner").submit(function() {
 	console.log("SUBMITTED");
 	$.ajax({
         url: "/search",
-        data: {name: $("input").val()},
+        data: {name: $("input").val(), region: regionSelection},
         type: "POST",
         dataType: "json",
         success: function(response) {
@@ -80,6 +81,12 @@ $("#summoner").submit(function() {
         }
     });
     return false;
+});
+
+$("#regiondropdownlist").on("click", "a", function() {
+	regionSelection = $(this).html();
+	console.log(regionSelection);
+	adjustButton("#regiondropdownmenu", regionSelection);
 });
 
 // on click of a menu item, filter the matches by champion and reload graph
