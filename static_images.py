@@ -1,21 +1,42 @@
 import json
 import requests
+import key
+
+API_key = key.getAPIkey()
 
 #load all champion pictures
 def load_champion_pictures(): 
-	with open('json/champion.json', 'r') as f:
+	with open('static/json/champion.json', 'r') as f:
 		champion_json = json.load(f)
 	print len(champion_json['data'])
+	version = champion_json['version']
+	print "version: " + version
 	for champion in champion_json['data']:
 		print champion
-		# currently version number is hardcoded to 5.11.1
-		r = requests.get('http://ddragon.leagueoflegends.com/cdn/5.11.1/img/champion/' + champion + '.png')
+		r = requests.get('http://ddragon.leagueoflegends.com/cdn/' + version + '/img/champion/' + champion + '.png')
 		if r.status_code == 200:
 			img = r.content
-			with open('images/champions/' + champion + '.png', 'w') as f:
+			with open('static/images/champions/' + champion + '.png', 'w') as f:
 				f.write(img)
 			print "img created"
 		else:
-			print "something went wrong"
+			print "pictures: something went wrong"
 
+#load champion json
+#converts to python dict using json() and json.dump() for error checking
+def load_champion_json():
+	try:
+		r = requests.get('https://global.api.pvp.net/api/lol/static-data/na/v1.2/champion?&api_key=' + API_key)
+		champion_json = r.json()
+		if 'status' in champion_json:
+			print champion_json['status']['message']
+			return
+	except ValueError as e:
+		print e.message
+		return
+
+	with open('static/json/champion.json', 'w') as f:
+		json.dump(champion_json, f)
+
+load_champion_json()
 load_champion_pictures()
