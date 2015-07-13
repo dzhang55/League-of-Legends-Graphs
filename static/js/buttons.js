@@ -54,12 +54,11 @@ $("#summoner").submit(function() {
         type: "POST",
         dataType: "json",
         success: function(response) {
-        	console.time("loaddata");
+        	//console.time("loaddata");
         	matches = response;
             loadSummonerData(matches);
             loadList(matches)
-            //
-            console.timeEnd("loaddata");
+            //console.timeEnd("loaddata");
         },
         error: function(error) {
         	// displays Summoner not registered and passes id to register button

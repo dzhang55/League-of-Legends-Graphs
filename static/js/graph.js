@@ -38,13 +38,14 @@ function loadChampionNames() {
  		for (var champion in champions.data) {
  		//	console.log(json.data[champion].key);
  		//	console.log(champion);
-			championNames[parseInt(champions.data[champion].key)] = champion;
+ 			var name = champions.data[champion].name;
+			championNames[parseInt(champions.data[champion].id)] = name;
 			var node = document.createElement("li");
 			var link = document.createElement("a");
 			link.setAttribute("role", "menuitem");
 			link.setAttribute("tabindex", "-1");
 			link.href = "#";
-			link.innerHTML = champion;
+			link.innerHTML = name;
 			node.appendChild(link);
 			menu.appendChild(node);
  		}
@@ -369,12 +370,12 @@ function loadList() {
     }
     sorted = dataset.slice(0).sort(compare);
     for (var i = 0; i < sorted.length; i++) {
-    	var picture = "<img src=/static/images/champions/" + championNames[sorted[i].name] + ".png height=50px>";
+    	//encode to valid URL
+    	var picture = "<img src=/static/images/champions/" + championNames[sorted[i].name].replace(" ", "%20") + ".png height=50px>";
     	var item = $('<li class="champion list-group-item">' + picture + " " + championNames[sorted[i].name] + ' </li>');
     	item.prepend($('<span class="badge badge-default">' + val(sorted[i]) + '</span>'));
     	$("#winratelist").append(item);
     }
-
 }
 
 function getWR(d) {
