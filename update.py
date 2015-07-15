@@ -14,6 +14,7 @@ done_loading = False
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(region, summoner_id):
     index = 0
+    global done_loading
     while not done_loading:
         try:
             r = requests.get(match_history_query(region, summoner_id, index))
@@ -32,9 +33,8 @@ def load_match_history(region, summoner_id):
         except ValueError as e:
             print e.message
             time.sleep(2)
-            # possibly when they have no match history
-            break
-
+            # server error 500
+            continue
 
         #empty json meaning all matches have been added
         if 'matches' not in matches_json:
@@ -47,6 +47,7 @@ def load_match_history(region, summoner_id):
         time.sleep(0.1)
         index += 15
     print summoner_id + " is done loading"
+    done_loading = False
 
 #checks if the most recent match is in the database
 #this stops the 15 request threads from loading
@@ -123,6 +124,7 @@ def get_other_participants(region, champion_id, match_id):
     except ValueError as e:
         print e.message
         print match_id
+        get_other_participants(region, champion_id, match_id)
 
 def get_region_and_id(name):
     region = ''
@@ -142,10 +144,13 @@ if __name__ == '__main__':
         args = sys.argv[1]
         if args == "hard":
             hard_update = True
-        if args in db.collection_names():
-            hard_update = True
-            load_match_history(args)
-            sys.exit()
+    #hard_update of single summoner by region and id
+    if len(sys.argv) == 3:
+        region = sys.argv[1]
+        summoner_id = sys.argv[2]
+        hard_update = True
+        load_match_history(region, summoner_id)
+        sys.exit()
             
     for collection in db.collection_names(include_system_collections = False):
         done_loading = False
