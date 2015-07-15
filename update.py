@@ -15,6 +15,8 @@ done_loading = False
 def load_match_history(region, summoner_id):
     index = 0
     global done_loading
+    if done_loading == True:
+        print "done_loading: something is wrong"
     while not done_loading:
         try:
             r = requests.get(match_history_query(region, summoner_id, index))
