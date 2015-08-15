@@ -1,9 +1,11 @@
 Riftwatch
 =========
 
-www.riftwatch.net
+www.riftwatch.net (deployed using Flask/Gunicorn/Nginx on an AWS EC2 Instance)
 
 Riftwatch is a Flask app that parses JSON data from the League of Legends API and stores it using MongoDB. It displays relevant game statistics to the user using D3 bubble graphs that the user can then interact with using various filters/settings. 
+
+![](/static/images/site.png)
 
 ##How it works
 
