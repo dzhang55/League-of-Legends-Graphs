@@ -13,7 +13,6 @@ done_loading = False
 
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(region, summoner_id):
-    print "IM IN MATCH HISTORY"
     global done_loading
     done_loading = False
     try:
@@ -116,6 +115,7 @@ def get_other_participants(region, match_id):
     except ValueError as e:
         print e.message
         print match_id
+        time.sleep(2)
         get_other_participants(region, match_id)
 
 def get_region_and_id(name):
