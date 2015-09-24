@@ -65,8 +65,8 @@ def add_current_matches(region, summoner_id, new_matches):
 #writes a single match to the database
 def load_single_match(region, summoner_id, match):
     global done_loading
-    player = match['participants'][0]
-    match_details = get_other_participants(region, player['championId'], match['matchId'])
+    player_champion = match['champion']
+    match_details = get_other_participants(region, player_champion, match['matchId'])
     match_details['player'] = player
     match_summary = abbreviate_match(match_details)
     write_result = db[region + str(summoner_id)].update({'_id' : match_details['matchId']}, {'$setOnInsert' : match_summary}, upsert = True)
@@ -79,31 +79,33 @@ def load_single_match(region, summoner_id, match):
         print match_details['matchId']
 
 #retrieves relevant statistics from a match
-def abbreviate_match(match):
+def abbreviate_match(match, champion_id):
     match_summary = {}
     match_summary['season'] = match['season']
     match_summary['player'] = {}
-    match_summary['player']['championId'] = match['player']['championId']
-    match_summary['player']['teamId'] = match['player']['teamId']
-    match_summary['player']['role'] = match['player']['timeline']['role']
-    match_summary['player']['lane'] = match['player']['timeline']['lane']
-    match_summary['player']['winner'] = match['player']['stats']['winner']
 
     match_summary['participants'] = []
     for participant in match['participants']:
-        match_summary['participants'].append(
-            {'championId': participant['championId'],
-             'teamId': participant['teamId']})
+        if champion_id == participant['championId']:
+            match_summary['player']['championId'] = participant['championId']
+            match_summary['player']['teamId'] = participant['teamId']
+            match_summary['player']['role'] = participant['timeline']['role']
+            match_summary['player']['lane'] = participant['timeline']['lane']
+            match_summary['player']['winner'] = participant['stats']['winner']
+        else:
+            match_summary['participants'].append(
+                {'championId': participant['championId'],
+                'teamId': participant['teamId']})
 
     return match_summary
 
 def match_history_query(region, summoner_id, index):
     return ('https://' + region + '.api.pvp.net/api/lol/' + region
-     + '/v2.2/matchhistory/' + str(summoner_id) + '?&beginIndex='
+     + '/v2.2/matchlist/by-summoner/' + str(summoner_id) + '?&beginIndex='
      + str(index) + '&api_key=' + API_key)
 
 #gets all the other participants from a match
-def get_other_participants(region, champion_id, match_id):
+def get_other_participants(region, match_id):
     try:
         r = requests.get('https://' + region + '.api.pvp.net/api/lol/' + region + '/v2.2/match/' + str(match_id) +  '?api_key=' + API_key)
         match = r.json()
@@ -114,19 +116,13 @@ def get_other_participants(region, champion_id, match_id):
             r = requests.get('https://na.api.pvp.net/api/lol/na/v2.2/match/' + str(match_id) +  '?api_key=' + API_key)
             match = r.json()
 
-        # remove the player from the participants
-        for participant in match['participants']:
-            if champion_id == participant['championId']:
-                match['participants'].remove(participant)
-                break
-                #print "removed owner"
         return match
     except requests.exceptions.HTTPError as e:
         print e.message
     except ValueError as e:
         print e.message
         print match_id
-        get_other_participants(region, champion_id, match_id)
+        get_other_participants(region, match_id)
 
 def get_region_and_id(name):
     region = ''
