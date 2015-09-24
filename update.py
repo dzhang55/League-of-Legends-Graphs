@@ -13,6 +13,7 @@ done_loading = False
 
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(region, summoner_id):
+    print "IM IN MATCH HISTORY"
     global done_loading
     done_loading = False
     try:
@@ -61,9 +62,8 @@ def add_current_matches(region, summoner_id, new_matches):
 def load_single_match(region, summoner_id, match):
     global done_loading
     player_champion = match['champion']
-    match_details = get_other_participants(region, player_champion, match['matchId'])
-    match_details['player'] = player
-    match_summary = abbreviate_match(match_details)
+    match_details = get_other_participants(region, match['matchId'])
+    match_summary = abbreviate_match(match_details, player_champion)
     write_result = db[region + str(summoner_id)].update({'_id' : match_details['matchId']}, {'$setOnInsert' : match_summary}, upsert = True)
     
     # if the match already exists and this is a soft update, this will stop loading matches
