@@ -13,8 +13,9 @@ done_loading = False
 
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(region, summoner_id):
+    global done_loading
+    done_loading = False
     try:
-        print match_history_query(region, summoner_id)
         r = requests.get(match_history_query(region, summoner_id))
         matches_json = r.json()
         if 'status' in matches_json:
@@ -95,7 +96,7 @@ def abbreviate_match(match, champion_id):
 
 def match_history_query(region, summoner_id):
     return ('https://' + region + '.api.pvp.net/api/lol/' + region
-     + '/v2.2/matchlist/by-summoner/' + str(summoner_id) + '&api_key=' + API_key)
+     + '/v2.2/matchlist/by-summoner/' + str(summoner_id) + '?&api_key=' + API_key)
 
 #gets all the other participants from a match
 def get_other_participants(region, match_id):
