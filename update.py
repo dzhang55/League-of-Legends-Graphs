@@ -13,54 +13,48 @@ done_loading = False
 
 #use this plus a begin and end index to get all of the matches of a player since the introduction of this version of match history
 def load_match_history(region, summoner_id):
-    index = 0
-    global done_loading
-    if done_loading == True:
-        print "done_loading: something is wrong"
-    while not done_loading:
-        try:
-            r = requests.get(match_history_query(region, summoner_id, index))
-            matches_json = r.json()
-            if 'status' in matches_json:
-                print matches_json['status']['message']
-                print "during load match history"
-                time.sleep(2)
-                continue
+    try:
+        print match_history_query(region, summoner_id)
+        r = requests.get(match_history_query(region, summoner_id))
+        matches_json = r.json()
+        if 'status' in matches_json:
+            print matches_json['status']['message']
+            print "during load match history"
+            time.sleep(2)
+            load_match_history(region, summoner_id)
 
-        except requests.exceptions.HTTPError as e:
-            print "error"
-            print e.message
-            time.sleep(2)
-            continue
-        except ValueError as e:
-            print e.message
-            time.sleep(2)
-            # server error 500
-            continue
+    except requests.exceptions.HTTPError as e:
+        print "error"
+        print e.message
+        time.sleep(2)
+        load_match_history(region, summoner_id)
+    except ValueError as e:
+        print e.message
+        time.sleep(2)
+        # server error 500
+        load_match_history(region, summoner_id)
 
         #empty json meaning all matches have been added
-        if 'matches' not in matches_json:
-            break
-        new_matches = r.json()['matches']
-        if not hard_update and up_to_date(region + summoner_id, new_matches[-1]['matchId']):
-            print "up to date"
-            break
-        add_current_matches(region, summoner_id, new_matches)
-        time.sleep(0.1)
-        index += 15
+    if 'matches' not in matches_json:
+        return
+    new_matches = r.json()['matches']
+    if not hard_update and up_to_date(region + summoner_id, new_matches[-1]['matchId']):
+        print "up to date"
+        return
+    add_current_matches(region, summoner_id, new_matches)
     print summoner_id + " is done loading"
-    done_loading = False
 
 #checks if the most recent match is in the database
-#this stops the 15 request threads from loading
 def up_to_date(collection, match_id):
     return db[collection].find({'_id': match_id}).count() == 1
 
 #start threads for loading each match in the list of current matches
 def add_current_matches(region, summoner_id, new_matches):
+    global done_loading
     for match in reversed(new_matches):
-        match_thread = Thread(target=load_single_match, args=[region, summoner_id, match])
-        match_thread.start()
+        if not done_loading:
+            match_thread = Thread(target=load_single_match, args=[region, summoner_id, match])
+            match_thread.start()
 
 #writes a single match to the database
 def load_single_match(region, summoner_id, match):
@@ -99,10 +93,9 @@ def abbreviate_match(match, champion_id):
 
     return match_summary
 
-def match_history_query(region, summoner_id, index):
+def match_history_query(region, summoner_id):
     return ('https://' + region + '.api.pvp.net/api/lol/' + region
-     + '/v2.2/matchlist/by-summoner/' + str(summoner_id) + '?&beginIndex='
-     + str(index) + '&api_key=' + API_key)
+     + '/v2.2/matchlist/by-summoner/' + str(summoner_id) + '&api_key=' + API_key)
 
 #gets all the other participants from a match
 def get_other_participants(region, match_id):
